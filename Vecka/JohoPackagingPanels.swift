@@ -349,7 +349,7 @@ struct PackagingWarningBox: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.triangle.fill")
+                Image(systemName: IconCatalog.warning)
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                 Text(title)
                     .font(.system(size: 11, weight: .black, design: .rounded))
@@ -395,7 +395,7 @@ struct PackagingCodeFooter: View {
 
     var body: some View {
         HStack(spacing: JohoDimensions.spacingSM) {
-            Image(systemName: "qrcode")
+            Image(systemName: IconCatalog.qrcode)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(colors.primary)
 

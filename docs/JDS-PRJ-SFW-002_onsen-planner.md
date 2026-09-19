@@ -1,9 +1,9 @@
 # JDS-PRJ-SFW-002 — Onsen Planner
 
 **Doc No:** JDS-PRJ-SFW-002
-**Rev:** A
+**Rev:** B
 **Status:** CURRENT
-**Date:** 2026-05-27
+**Date:** 2026-09-19
 **Author:** Nils Johansson
 
 ---
@@ -27,7 +27,10 @@ Built with SwiftUI, SwiftData, WidgetKit, EventKit, and the Contacts framework. 
 - **UI:** SwiftUI exclusively. No UIKit views (UIKit only via `AppDelegate` for orientation lock and appearance defaults).
 - **Persistence:** SwiftData with a fallback chain — primary store → local-only → in-memory (last resort to keep the app launchable on a corrupted store).
 - **CloudKit:** disabled at the configuration level (`cloudKitDatabase: .none`) pending model updates for CloudKit compatibility (inverse relationships, optional attributes, no unique constraints).
+- **Holiday cache pipeline:** `HolidayManager.calculateAndCacheHolidays` snapshots rules into `Sendable` value types on the main actor, computes the years × rules date engine on a detached background task (cancellable; generation-guarded so stale results never apply), and posts the cache back to the main actor. Keeps launch and year-scrolling off the main thread.
 - **External data:** EventKit (calendars), Contacts, Core Location (weather context, optional), Photos, Camera (QR import).
+- **Monetization:** StoreKit 2 via `Vecka/Services/StoreManager.swift` (products → purchase → restore → entitlement mirror). Vecka Pro gates PDF/CSV export and removes the free-tier caps (3 custom events, 3 trips). Paywall: `Vecka/Views/PaywallView.swift`; entry points in Settings, Expense list export menu, Events and Trips add buttons.
+- **iOS 27 readiness:** `@State` properties are initialized in exactly one place (declaration or init) per the iOS 27 `@State` macro semantics; unresolved hazards were fixed in `ExpenseEntryView`, `JohoEditorSheets`, and `MemoEditorView` (`JohoTimePicker`).
 - **Build:** `./build.sh build|test|widget-test|archive|clean`. Uses `xcodebuild` with code signing disabled for local builds. Default destination is iPhone 17 Pro simulator.
 
 ## Source layout

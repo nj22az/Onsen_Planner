@@ -13,6 +13,7 @@ import SwiftData
 struct ExpenseListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
+    @Environment(StoreManager.self) private var storeManager
 
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
 
@@ -40,8 +41,19 @@ struct ExpenseListView: View {
     @State private var csvExportURL: URL?
     @State private var showCSVShareSheet = false
     @State private var csvExportError: String?
+    @State private var showPaywall = false
 
     private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
+    /// PDF/CSV export is a Vecka Pro feature: run the action when entitled,
+    /// otherwise present the paywall at the intent moment.
+    private func attemptProExport(_ action: () -> Void) {
+        if storeManager.isPro {
+            action()
+        } else {
+            showPaywall = true
+        }
+    }
 
     var body: some View {
         // Note: This view is embedded via NavigationLink or presented in sheet with NavigationStack
@@ -89,43 +101,49 @@ struct ExpenseListView: View {
                             }
 
                             // PDF Export (情報デザイン: Direct access to reports)
+                            // Vecka Pro feature — free users get the paywall.
                             Section("Export PDF") {
                                 Button {
-                                    let weekInfo = WeekCalculator.shared.weekInfo(for: Date())
-                                    exportContext = .expenseReportWeek(weekNumber: weekInfo.weekNumber, year: weekInfo.year, baseCurrency: baseCurrency)
-                                    showExportSheet = true
+                                    attemptProExport {
+                                        let weekInfo = WeekCalculator.shared.weekInfo(for: Date())
+                                        exportContext = .expenseReportWeek(weekNumber: weekInfo.weekNumber, year: weekInfo.year, baseCurrency: baseCurrency)
+                                        showExportSheet = true
+                                    }
                                 } label: {
                                     Label("This Week (PDF)", systemImage: IconCatalog.memo)
                                 }
 
                                 Button {
-                                    let calendar = Calendar.iso8601
-                                    let now = Date()
-                                    let month = calendar.component(.month, from: now)
-                                    let year = calendar.component(.year, from: now)
-                                    exportContext = .expenseReportMonth(month: month, year: year, baseCurrency: baseCurrency)
-                                    showExportSheet = true
+                                    attemptProExport {
+                                        let calendar = Calendar.iso8601
+                                        let now = Date()
+                                        let month = calendar.component(.month, from: now)
+                                        let year = calendar.component(.year, from: now)
+                                        exportContext = .expenseReportMonth(month: month, year: year, baseCurrency: baseCurrency)
+                                        showExportSheet = true
+                                    }
                                 } label: {
                                     Label("This Month (PDF)", systemImage: "doc.text.fill")
                                 }
                             }
 
                             // CSV Export (情報デザイン: Spreadsheet-friendly)
+                            // Vecka Pro feature — free users get the paywall.
                             Section("Export CSV") {
                                 Button {
-                                    exportCSVThisWeek()
+                                    attemptProExport { exportCSVThisWeek() }
                                 } label: {
                                     Label("This Week (CSV)", systemImage: "tablecells")
                                 }
 
                                 Button {
-                                    exportCSVThisMonth()
+                                    attemptProExport { exportCSVThisMonth() }
                                 } label: {
                                     Label("This Month (CSV)", systemImage: "tablecells.fill")
                                 }
 
                                 Button {
-                                    exportCSVFiltered()
+                                    attemptProExport { exportCSVFiltered() }
                                 } label: {
                                     Label("Current View (CSV)", systemImage: "square.and.arrow.up")
                                 }
@@ -169,6 +187,9 @@ struct ExpenseListView: View {
                 if let context = exportContext {
                     SimplePDFExportView(exportContext: context)
                 }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
             .sheet(isPresented: $showCSVShareSheet) {
                 if let url = csvExportURL {
@@ -814,4 +835,5 @@ enum GroupingOption {
 #Preview {
     ExpenseListView()
         .modelContainer(for: [Memo.self], inMemory: true)
+        .environment(StoreManager.shared)
 }

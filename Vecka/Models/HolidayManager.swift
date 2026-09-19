@@ -57,6 +57,54 @@ final class HolidayCacheStorage: @unchecked Sendable {
     }
 }
 
+/// Sendable, value-type snapshot of a `HolidayRule`.
+///
+/// SwiftData models are not `Sendable`, so the year × rule date computation
+/// cannot run on a background thread against `HolidayRule` directly. The
+/// manager snapshots the fetched rules into these value types on the main
+/// actor (cheap: a few hundred small rows) and hands them to a detached task.
+struct HolidayComputationRule: Sendable {
+    let id: String
+    let region: String
+    let name: String
+    let titleOverride: String?
+    let isBankHoliday: Bool
+    let symbolName: String?
+    let iconColor: String?
+    let notes: String?
+    let localName: String?
+    let isUserCreated: Bool
+    let type: HolidayRuleType
+    let month: Int?
+    let day: Int?
+    let daysOffset: Int?
+    let weekday: Int?
+    let ordinal: Int?
+    let dayRangeStart: Int?
+    let dayRangeEnd: Int?
+
+    init(from rule: HolidayRule) {
+        id = rule.id
+        region = rule.region
+        name = rule.name
+        titleOverride = rule.titleOverride
+        isBankHoliday = rule.isBankHoliday
+        symbolName = rule.symbolName
+        iconColor = rule.iconColor
+        notes = rule.notes
+        localName = rule.localName
+        isUserCreated = rule.userModifiedAt != nil
+        type = rule.type
+        month = rule.month
+        day = rule.day
+        daysOffset = rule.daysOffset
+        weekday = rule.weekday
+        ordinal = rule.ordinal
+        dayRangeStart = rule.dayRangeStart
+        dayRangeEnd = rule.dayRangeEnd
+    }
+}
+
 @MainActor
 @Observable
 class HolidayManager {
@@ -84,10 +132,16 @@ class HolidayManager {
         Self.cacheStorage.cache = newValue
     }
 
-    // Holiday engine for date calculations
-    private let engine = HolidayEngine()
-
     private var lastFocusYear: Int?
+
+    /// In-flight background cache computation. Cancelled when a newer
+    /// recalculation request arrives (e.g. rapid year scrolling).
+    private var recalculationTask: Task<Void, Never>?
+
+    /// Monotonic counter pairing each computation with its request.
+    /// A computed cache is only applied when its generation still matches,
+    /// guaranteeing a superseded (stale) result never overwrites a newer one.
+    private var recalculationGeneration = 0
 
     private init() {}
 
@@ -214,8 +268,23 @@ class HolidayManager {
         }
     }
 
-    /// Calculate holidays for a 5-year window (Current Year +/- 2).
-    /// If `focusYear` is provided, also caches a 5-year window around that year.
+    /// Recalculate the in-memory holiday cache for the current year ± the
+    /// configured span, plus a window around `focusYear` when provided.
+    ///
+    /// Two-phase pipeline:
+    /// 1. **Main actor (fast):** read settings, fetch the rules, and snapshot
+    ///    them into `Sendable` value types. A few hundred small rows —
+    ///    well under a millisecond on any device.
+    /// 2. **Detached task (heavy):** the years × rules date engine, per-day
+    ///    sorting, and title dedup run off the main thread; the finished
+    ///    cache hops back to the main actor to be applied.
+    ///
+    /// Rapid successive calls (e.g. calendar year scrolling) cancel the
+    /// previous computation, and a generation counter guarantees a
+    /// superseded result is never applied over a newer one. Callers that
+    /// previously relied on this method being synchronous should note the
+    /// cache now updates asynchronously — view code already tolerates an
+    /// empty/stale cache and redraws when it populates.
     func calculateAndCacheHolidays(context: ModelContext, focusYear: Int? = nil) {
         if let focusYear {
             lastFocusYear = focusYear
@@ -232,8 +301,14 @@ class HolidayManager {
             let legacySelection = HolidayRegionSelection(regions: [legacy])
             regions = legacySelection.expandedRegions
         }
-        
+
+        // Every request gets its own generation; only the latest may apply.
+        recalculationGeneration &+= 1
+        let generation = recalculationGeneration
+
         if !showHolidays {
+            recalculationTask?.cancel()
+            recalculationTask = nil
             setHolidayCache([:])
             Log.d("Holidays disabled in settings. Cache cleared.")
             return
@@ -244,9 +319,12 @@ class HolidayManager {
             let descriptor = FetchDescriptor<HolidayRule>()
             let allRules = try context.fetch(descriptor)
 
-            // Filter by selected regions and enabled status.
+            // Filter by selected regions and enabled status, then detach the
+            // result from SwiftData so the computation can leave the main actor.
             // Empty region is treated as "All Regions" (user-defined or global rules).
-            let rules = allRules.filter { $0.isEnabled && ($0.region.isEmpty || regions.contains($0.region)) }
+            let rules = allRules
+                .filter { $0.isEnabled && ($0.region.isEmpty || regions.contains($0.region)) }
+                .map(HolidayComputationRule.init(from:))
 
             let span = ConfigurationManager.shared.getInt("holiday_cache_span", context: context, default: 2)
             let currentYear = Calendar.current.component(.year, from: Date())
@@ -256,48 +334,75 @@ class HolidayManager {
             }
             let years = yearsToCache.sorted()
 
-            var newCache: [Date: [HolidayCacheItem]] = [:]
-
-            for year in years {
-                for rule in rules {
-                    if let date = engine.calculateDate(for: rule, year: year) {
-                        let normalized = Calendar.current.startOfDay(for: date)
-                        let symbolName = normalizedSymbolName(for: rule, context: context)
-                        let item = HolidayCacheItem(
-                            id: rule.id,
-                            region: rule.region,
-                            name: rule.name,
-                            titleOverride: rule.titleOverride,
-                            isBankHoliday: rule.isBankHoliday,
-                            symbolName: symbolName,
-                            iconColor: rule.iconColor,
-                            notes: rule.notes,
-                            localName: rule.localName,
-                            isUserCreated: rule.userModifiedAt != nil
-                        )
-                        newCache[normalized, default: []].append(item)
-                    }
+            recalculationTask?.cancel()
+            let regionsForLog = regions
+            recalculationTask = Task.detached(priority: .userInitiated) { [weak self] in
+                let computed = Self.computeHolidayCache(rules: rules, years: years)
+                await MainActor.run {
+                    guard let self, generation == self.recalculationGeneration else { return }
+                    self.setHolidayCache(computed.cache)
+                    self.recalculationTask = nil
+                    Log.i("Engine calculated \(computed.dateCount) holiday dates for regions \(regionsForLog.joined(separator: ", ")).")
                 }
             }
-
-            var sortedCache: [Date: [HolidayCacheItem]] = [:]
-            sortedCache.reserveCapacity(newCache.count)
-            for (day, items) in newCache {
-                let sorted = items.sorted(by: { sortHolidays(lhs: $0, rhs: $1) })
-                sortedCache[day] = Self.deduplicateByTitle(sorted)
-            }
-
-            setHolidayCache(sortedCache)
-            Log.i("Engine calculated \(newCache.count) holiday dates for regions \(regions.joined(separator: ", ")).")
         } catch {
             Log.w("Failed to fetch holiday rules: \(error.localizedDescription)")
         }
     }
 
+    /// Pure date computation, executed on a background thread.
+    /// Every input is a `Sendable` value type — no SwiftData models, no
+    /// `ModelContext` — so the years × rules loop is race-free.
+    /// Returns the finished cache and the number of holiday dates in it.
+    nonisolated private static func computeHolidayCache(
+        rules: [HolidayComputationRule],
+        years: [Int]
+    ) -> (cache: [Date: [HolidayCacheItem]], dateCount: Int) {
+        guard !Task.isCancelled else { return ([:], 0) }
+
+        let engine = HolidayEngine()
+        let calendar = Calendar.current
+        var newCache: [Date: [HolidayCacheItem]] = [:]
+
+        for year in years {
+            // Bail out early when a newer request superseded this one.
+            if Task.isCancelled { return ([:], 0) }
+            for rule in rules {
+                if let date = engine.calculateDate(for: rule, year: year) {
+                    let normalized = calendar.startOfDay(for: date)
+                    let item = HolidayCacheItem(
+                        id: rule.id,
+                        region: rule.region,
+                        name: rule.name,
+                        titleOverride: rule.titleOverride,
+                        isBankHoliday: rule.isBankHoliday,
+                        symbolName: normalizedSymbolName(for: rule),
+                        iconColor: rule.iconColor,
+                        notes: rule.notes,
+                        localName: rule.localName,
+                        isUserCreated: rule.isUserCreated
+                    )
+                    newCache[normalized, default: []].append(item)
+                }
+            }
+        }
+
+        if Task.isCancelled { return ([:], 0) }
+
+        var sortedCache: [Date: [HolidayCacheItem]] = [:]
+        sortedCache.reserveCapacity(newCache.count)
+        for (day, items) in newCache {
+            let sorted = items.sorted(by: { sortHolidays(lhs: $0, rhs: $1) })
+            sortedCache[day] = deduplicateByTitle(sorted)
+        }
+
+        return (sortedCache, newCache.count)
+    }
+
     /// Merge same-title holidays from multiple regions into a single item per date.
     /// E.g., Valentine's Day from SE + VN becomes one item with mergedRegions: ["SE", "VN"].
     /// Bank holiday status, notes, icons merge by taking the most significant value.
-    private static func deduplicateByTitle(_ items: [HolidayCacheItem]) -> [HolidayCacheItem] {
+    nonisolated private static func deduplicateByTitle(_ items: [HolidayCacheItem]) -> [HolidayCacheItem] {
         var seen: [String: Int] = [:]  // displayTitle → index in result
         var result: [HolidayCacheItem] = []
 
@@ -334,14 +439,17 @@ class HolidayManager {
         return result
     }
 
-    private func sortHolidays(lhs: HolidayCacheItem, rhs: HolidayCacheItem) -> Bool {
+    nonisolated private static func sortHolidays(lhs: HolidayCacheItem, rhs: HolidayCacheItem) -> Bool {
         if lhs.isBankHoliday != rhs.isBankHoliday { return lhs.isBankHoliday && !rhs.isBankHoliday }
         let left = lhs.displayTitle
         let right = rhs.displayTitle
         return left.localizedCaseInsensitiveCompare(right) == .orderedAscending
     }
 
-    private func normalizedSymbolName(for rule: HolidayRule, context: ModelContext) -> String? {
+    /// Resolve the SF Symbol for a computation snapshot: the rule's own
+    /// `symbolName` wins, then the shared name-based icon heuristic, then a
+    /// bank-holiday flag or observance star.
+    nonisolated private static func normalizedSymbolName(for rule: HolidayComputationRule) -> String? {
         let trimmed = (rule.symbolName ?? "").trimmed
         if !trimmed.isEmpty { return trimmed }
 
@@ -355,7 +463,7 @@ class HolidayManager {
     }
 
     /// Shared holiday icon logic used by Widgets and App
-    static func holidayIcon(for holidayId: String?) -> String? {
+    nonisolated static func holidayIcon(for holidayId: String?) -> String? {
         guard let id = holidayId?.lowercased() else { return nil }
 
         // Christmas related

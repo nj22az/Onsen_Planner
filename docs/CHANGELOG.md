@@ -2,6 +2,29 @@
 
 Logs all changes to documents under `docs/`. Follows JDS conventions: one heading per revision, newest first. System-level changes (registry entries in `nj22az/JDS_Documentation`) are noted but not duplicated.
 
+## Rev E — 2026-09-19
+
+**JDS-PRJ-SFW-002 Rev B: async holiday pipeline, iOS 27 `@State` readiness, StoreKit 2 monetization.**
+
+- §Tech inventory: added "Holiday cache pipeline" (main-actor snapshot →
+  detached compute → main-actor apply, with cancellation + generation
+  guard); added "Monetization" (StoreKit 2, Vecka Pro feature gating);
+  added "iOS 27 readiness" (single-point `@State` initialization rule).
+- Source layout unchanged in table; new files are
+  `Vecka/Services/StoreManager.swift` and `Vecka/Views/PaywallView.swift`.
+
+Companion code changes (not docs): `HolidayManager`/`HolidayEngine`
+moved the years × rules date computation off the main thread;
+`AppInitializer` comments updated; `@State` declaration/init conflicts
+fixed in `ExpenseEntryView`, `JohoEditorSheets`, `MemoEditorView`;
+`StoreManager` + `PaywallView` added; Pro gates wired into
+`CountdownListView` (event cap), `TripListView` (trip cap),
+`ExpenseListView` (PDF/CSV export), `SettingsView` (Pro section);
+`VeckaApp` injects `StoreManager` and warms products/entitlements at
+launch; two pre-existing `Image(systemName: "literal")` violations in
+`JohoPackagingPanels.swift` moved to `IconCatalog` so the design-system
+lint passes clean.
+
 ## Rev D — 2026-05-29
 
 **JDS-MAN-SFW-001: fill DS-component documentation gaps; tighten validator.**

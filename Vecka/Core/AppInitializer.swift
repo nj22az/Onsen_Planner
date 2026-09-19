@@ -41,12 +41,17 @@ enum AppInitializer {
         CalendarManager.shared.initialize(context: context)
         HolidayManager.shared.seedRulesIfNeeded(context: context)
 
-        // DEFERRED PATH (next runloop): the expensive 5-year × 259-rule
-        // holiday computation + DB-writing config seeding. Yielding lets
-        // the first frame render before these run, so cold launch feels
-        // instant. View code that reads `HolidayManager.cache` already
-        // tolerates an empty cache (returns no holidays, then redraws
-        // when the cache populates).
+        // DEFERRED PATH (next runloop): kicks off the holiday cache
+        // recalculation + DB-writing config seeding. Yielding lets the
+        // first frame render before these run, so cold launch feels
+        // instant. `calculateAndCacheHolidays` itself only snapshots rules
+        // on the main actor (sub-millisecond) — the expensive
+        // 5-year × ~260-rule date engine runs on a detached background
+        // task and applies the cache when finished, so immediate user
+        // interaction (scrolling, tapping) never contends with it.
+        // View code that reads `HolidayManager.cache` already tolerates
+        // an empty cache (returns no holidays, then redraws when the
+        // cache populates).
         Task { @MainActor in
             HolidayManager.shared.calculateAndCacheHolidays(context: context)
             ConfigurationManager.shared.seedDefaultConfiguration(context: context)

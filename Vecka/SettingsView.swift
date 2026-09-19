@@ -18,6 +18,7 @@ private struct IdentifiableMonth: Identifiable {
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
+    @Environment(StoreManager.self) private var storeManager
     @AppStorage("holidayRegions") private var holidayRegions = HolidayRegionSelection(regions: ["SE"])
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
     @AppStorage("amoledTrueBlack") private var amoledTrueBlack = false
@@ -25,6 +26,9 @@ struct SettingsView: View {
     @AppStorage("customLandingTitle") private var customLandingTitle = ""
     /// Dynamic colors based on color mode
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
+
+    // Vecka Pro state
+    @State private var showPaywall = false
 
     // Database statistics queries
     @Query private var holidayRules: [HolidayRule]
@@ -53,6 +57,9 @@ struct SettingsView: View {
                 settingsPageHeader
                     .padding(.horizontal, JohoDimensions.spacingLG)
                     .padding(.top, JohoDimensions.spacingSM)
+
+                // Vecka Pro Section (情報デザイン: Subscription surface)
+                proSection
 
                 // Theme Section (情報デザイン: Unified theming)
                 themeSection
@@ -245,6 +252,81 @@ struct SettingsView: View {
             .background(isSelected ? colors.primary : colors.surface)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Vecka Pro Section (情報デザイン: Monetization surface)
+
+    private var proSection: some View {
+        VStack(alignment: .leading, spacing: JohoDimensions.spacingMD) {
+            // Section label
+            JohoPill(text: "VECKA PRO", style: .whiteOnBlack, size: .small)
+
+            // Status / upgrade card
+            HStack(spacing: JohoDimensions.spacingMD) {
+                Image(systemName: storeManager.isPro ? IconCatalog.checkmarkCircleFill : IconCatalog.star)
+                    .font(JohoFont.headline)
+                    .foregroundStyle(colors.primary)
+                    .johoTouchTarget()
+                    .background(JohoColors.yellow.opacity(JohoDimensions.opacityMedium))
+                    .clipShape(Squircle(cornerRadius: JohoDimensions.radiusSmall))
+                    .overlay(
+                        Squircle(cornerRadius: JohoDimensions.radiusSmall)
+                            .stroke(colors.border, lineWidth: JohoDimensions.borderThin)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(storeManager.isPro ? "Pro is active" : "Get Vecka Pro")
+                        .font(JohoFont.headline)
+                        .foregroundStyle(colors.primary)
+
+                    Text(storeManager.isPro
+                         ? "Unlimited events, trips & exports"
+                         : "Unlimited events & trips · PDF/CSV export")
+                        .font(JohoFont.body)
+                        .foregroundStyle(colors.secondary)
+                }
+
+                Spacer()
+
+                if !storeManager.isPro {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        Text("Upgrade")
+                            .font(JohoFont.label)
+                            .foregroundStyle(colors.primaryInverted)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(colors.primary)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(JohoDimensions.spacingMD)
+            .background(colors.surface)
+            .clipShape(Squircle(cornerRadius: JohoDimensions.radiusMedium))
+            .overlay(
+                Squircle(cornerRadius: JohoDimensions.radiusMedium)
+                    .strokeBorder(colors.border, lineWidth: JohoDimensions.borderMedium)
+            )
+
+            // Restore purchases (App Review requirement — always reachable)
+            Button {
+                Task {
+                    await storeManager.restorePurchases()
+                }
+            } label: {
+                Text("Restore purchases")
+                    .font(JohoFont.caption)
+                    .foregroundStyle(colors.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, JohoDimensions.spacingLG)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
     }
 
     // MARK: - Theme Section (情報デザイン: Unified Category Theming)
@@ -1578,5 +1660,6 @@ struct SettingsCategoryCustomizationSheet: View {
 #Preview {
     NavigationStack {
         SettingsView()
+            .environment(StoreManager.shared)
     }
 }

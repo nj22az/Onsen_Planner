@@ -867,8 +867,11 @@ struct JohoTimePicker: View {
     @Binding var selectedTime: Date
     let accentColor: Color
 
-    @State private var hours: Int = 0
-    @State private var minutes: Int = 0
+    // info: bare @State declarations — init always assigns from selectedTime
+    // (iOS 27's @State macro discards the init value when the declaration
+    // also has a default).
+    @State private var hours: Int
+    @State private var minutes: Int
 
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
 

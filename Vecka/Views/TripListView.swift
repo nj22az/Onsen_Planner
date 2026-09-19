@@ -11,15 +11,22 @@ import SwiftData
 struct TripListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
+    @Environment(StoreManager.self) private var storeManager
     @Query(sort: \Memo.date, order: .reverse) private var allMemos: [Memo]
 
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
 
     @State private var showAddTrip = false
+    @State private var showPaywall = false
     @State private var selectedTrip: Memo?
 
     /// Filtered trips from Memo
     private var allTrips: [Memo] { allMemos.trips }
+
+    /// Free tier: up to `ProLimits.freeTripLimit` trips; Pro is unlimited.
+    private var canAddTrip: Bool {
+        storeManager.isPro || allTrips.count < ProLimits.freeTripLimit
+    }
 
     var body: some View {
         ScrollView {
@@ -34,7 +41,12 @@ struct TripListView: View {
                     Spacer()
 
                     Button {
-                        showAddTrip = true
+                        if canAddTrip {
+                            showAddTrip = true
+                        } else {
+                            // Free-tier limit reached — conversion moment.
+                            showPaywall = true
+                        }
                     } label: {
                         JohoActionButton(icon: "plus")
                     }
@@ -118,6 +130,9 @@ struct TripListView: View {
             NavigationStack {
                 AddTripView()
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
         .sheet(item: $selectedTrip) { trip in
             NavigationStack {

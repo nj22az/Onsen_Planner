@@ -242,14 +242,17 @@ struct JohoSpecialDayEditorSheet: View {
     // 情報デザイン: Access enabled regions for region picker
     @AppStorage("holidayRegions") private var holidayRegions = HolidayRegionSelection(regions: ["SE"])
 
-    @State private var name: String = ""
-    @State private var notes: String = ""
-    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
-    @State private var selectedMonth: Int = 1
-    @State private var selectedDay: Int = 1
-    @State private var selectedSymbol: String = "star.fill"
-    @State private var selectedIconColor: String? = nil
-    @State private var selectedRegion: String = ""
+    // info: bare @State declarations — initial values are assigned exclusively
+    // in init's mode switch (iOS 27's @State macro discards the init value
+    // when the declaration also has a default).
+    @State private var name: String
+    @State private var notes: String
+    @State private var selectedYear: Int
+    @State private var selectedMonth: Int
+    @State private var selectedDay: Int
+    @State private var selectedSymbol: String
+    @State private var selectedIconColor: String?
+    @State private var selectedRegion: String
     @State private var showingIconPicker = false
 
     /// 情報デザイン: Enabled regions for the region picker (PERSONAL + user-selected regions)

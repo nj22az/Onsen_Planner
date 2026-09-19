@@ -13,6 +13,7 @@ import SwiftData
 struct VeckaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var navigationManager = NavigationManager()
+    @State private var storeManager = StoreManager.shared
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showOnboarding = false
@@ -85,10 +86,12 @@ struct VeckaApp: App {
             Group {
                 if AppEnvironment.isUITesting {
                     UITestRootView()
+                        .environment(storeManager)
                 } else {
                     AppearanceResolver(preference: appearancePreference) { resolvedMode in
                         ContentView()
                             .environment(navigationManager)
+                            .environment(storeManager)
                             // 情報デザイン: Apply the resolved app color mode (binary).
                             .johoColorMode(resolvedMode)
                             // iOS chrome follows the user's preference. The nav-bar
@@ -99,6 +102,14 @@ struct VeckaApp: App {
                     }
                         .onOpenURL { url in
                             handleWidgetURL(url)
+                        }
+                        .task {
+                            // Vecka Pro: fetch the App Store catalog and re-verify
+                            // entitlements right after launch. Runs off the
+                            // first-frame path; the paywall retries lazily on
+                            // failure, so no error handling is needed here.
+                            await storeManager.loadProducts()
+                            await storeManager.refreshEntitlements()
                         }
                         .onAppear {
                             Log.i("App launched. System language: \(LanguageManager.shared.currentLanguageCode)")

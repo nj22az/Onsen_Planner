@@ -12,6 +12,7 @@ import SwiftUI
 struct CountdownListView: View {
     @State private var customCountdowns: [CustomCountdown] = []
     @State private var showAddEvent = false
+    @State private var showPaywall = false
     @State private var selectedCountdown: CountdownType = .custom
 
     // State for new event dialog
@@ -20,7 +21,13 @@ struct CountdownListView: View {
     @State private var newEventIsAnnual: Bool = false
 
     @Environment(\.johoColorMode) private var colorMode
+    @Environment(StoreManager.self) private var storeManager
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
+
+    /// Free tier: up to `ProLimits.freeEventLimit` custom events; Pro is unlimited.
+    private var canAddEvent: Bool {
+        storeManager.isPro || customCountdowns.count < ProLimits.freeEventLimit
+    }
 
     var body: some View {
         ScrollView {
@@ -62,6 +69,9 @@ struct CountdownListView: View {
             }
             .presentationCornerRadius(16)
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
     }
 
     // MARK: - Header Section (情報デザイン: Icon zone like Star Page months)
@@ -82,7 +92,9 @@ struct CountdownListView: View {
                     .font(JohoFont.displaySmall)
                     .foregroundStyle(colors.primary)
 
-                Text("\(customCountdowns.count) event\(customCountdowns.count == 1 ? "" : "s")")
+                Text(storeManager.isPro
+                     ? "\(customCountdowns.count) event\(customCountdowns.count == 1 ? "" : "s")"
+                     : "\(customCountdowns.count)/\(ProLimits.freeEventLimit) events")
                     .font(JohoFont.caption)
                     .foregroundStyle(colors.primary.opacity(JohoDimensions.opacityBold))
             }
@@ -90,7 +102,12 @@ struct CountdownListView: View {
             Spacer()
 
             Button {
-                showAddEvent = true
+                if canAddEvent {
+                    showAddEvent = true
+                } else {
+                    // Free-tier limit reached — conversion moment.
+                    showPaywall = true
+                }
             } label: {
                 JohoActionButton(icon: "plus")
             }
@@ -490,5 +507,6 @@ struct CountdownListView: View {
 #Preview {
     NavigationStack {
         CountdownListView()
+            .environment(StoreManager.shared)
     }
 }

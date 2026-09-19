@@ -21,10 +21,13 @@ struct JohoExpenseEditorSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
 
-    @State private var amount: String = ""
-    @State private var currency: String = "SEK"
-    @State private var description: String = ""
-    @State private var merchant: String = ""
+    // info: bare @State declarations — initial values are assigned exclusively
+    // in init (iOS 27's @State macro discards the init value when the
+    // declaration also has a default).
+    @State private var amount: String
+    @State private var currency: String
+    @State private var description: String
+    @State private var merchant: String
     @State private var showingIconPicker = false
     @State private var selectedSymbol: String = "dollarsign.circle.fill"
 
@@ -80,6 +83,11 @@ struct JohoExpenseEditorSheet: View {
             _currency = State(initialValue: expense.currency ?? "SEK")
             _description = State(initialValue: expense.text)
             _merchant = State(initialValue: expense.place ?? "")
+        } else {
+            _amount = State(initialValue: "")
+            _currency = State(initialValue: "SEK")
+            _description = State(initialValue: "")
+            _merchant = State(initialValue: "")
         }
     }
 
