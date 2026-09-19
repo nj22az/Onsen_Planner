@@ -433,7 +433,7 @@ struct SettingsView: View {
             .johoBordered()
 
             // Footer
-            Text("Themes transform borders, surfaces, category colors, and UI accent. Month colors (季節の色) stay locked.")
+            Text("Themes transform borders, surfaces, category colors, and UI accent. Month colors (季節の色) stay locked. PRO-marked themes are included with Vecka Pro.")
                 .font(JohoFont.caption)
                 .foregroundStyle(colors.secondary)
                 .padding(.horizontal, JohoDimensions.spacingSM)
@@ -448,13 +448,20 @@ struct SettingsView: View {
 
     private func themePresetCard(_ theme: JohoThemePreset) -> some View {
         let isActive = CategoryColorSettings.shared.activeThemeId == theme.id
+        // Premium themes require Vecka Pro — tapping routes to the paywall instead of applying
+        let isLocked = (theme.isPremium ?? false) && !storeManager.isPro
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                CategoryColorSettings.shared.applyTheme(theme)
+            if isLocked {
+                HapticManager.selection()
+                showPaywall = true
+            } else {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    CategoryColorSettings.shared.applyTheme(theme)
+                }
+                HapticManager.notification(.success)
+                WidgetCenter.shared.reloadTimelines(ofKind: "VeckaWidget")
             }
-            HapticManager.notification(.success)
-            WidgetCenter.shared.reloadTimelines(ofKind: "VeckaWidget")
         } label: {
             VStack(spacing: 6) {
                 // Icon in colored circle with checkmark overlay
@@ -469,13 +476,19 @@ struct SettingsView: View {
                             .strokeBorder(isActive ? colors.primary : colors.border, lineWidth: isActive ? 2.5 : 1.5)
                     )
                     .overlay(alignment: .bottomTrailing) {
-                        if isActive {
+                        if isActive && !isLocked {
                             Image(systemName: IconCatalog.checkmarkCircleFill)
                                 .font(JohoFont.headlineSmall)
                                 .foregroundStyle(colors.primary)
                                 .background(colors.surface)
                                 .clipShape(Circle())
                                 .offset(x: 4, y: 4)
+                        }
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if isLocked {
+                            JohoPill(text: "PRO", style: .whiteOnBlack, size: .small)
+                                .offset(x: 6, y: -6)
                         }
                     }
 

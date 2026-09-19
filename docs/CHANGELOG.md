@@ -2,6 +2,28 @@
 
 Logs all changes to documents under `docs/`. Follows JDS conventions: one heading per revision, newest first. System-level changes (registry entries in `nj22az/JDS_Documentation`) are noted but not duplicated.
 
+## Rev G — 2026-09-19
+
+**JDS-PRJ-SFW-002 Rev D + new JDS-REF-SFW-002: Japanese-brand theme palettes.**
+
+- PRJ §Tech inventory: Monetization bullet extended — Vecka Pro now also
+  unlocks premium theme presets (`JohoThemePreset.isPremium`; locked
+  cards show a PRO pill and open the paywall); new Theme presets bullet
+  documenting the JSON-canonical/builtInPresets-fallback sync rule and
+  the eight presets.
+- New document `JDS-REF-SFW-002_theme-palettes.md` (Rev A): provenance
+  for the four brand-palette themes adapted from
+  [kzhrknt/awesome-design-md-jp](https://github.com/kzhrknt/awesome-design-md-jp)
+  (MIT) — Teal (note.com) and Stone (SmartHR) free; Wagashi (Funabashiya
+  船橋屋) and Kincha (Adachi Museum 足立美術館) Vecka Pro. Includes
+  source-token → theme-role tables and the add-a-theme checklist.
+
+Companion code changes (not docs): `isPremium` added to the theme preset
+schema; four presets added to `theme-presets.json` and
+`JohoThemeLoader.builtInPresets`; `SettingsView.themePresetCard` gates
+premium themes behind the shared paywall binding; `PaywallView` feature
+list now names premium themes as a shipped Pro feature.
+
 ## Rev F — 2026-09-19
 
 **JDS-PRJ-SFW-002 Rev C: CloudKit enabled; iOS 27 chrome stance documented.**

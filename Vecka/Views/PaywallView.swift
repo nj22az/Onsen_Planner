@@ -141,10 +141,10 @@ struct PaywallView: View {
             JohoDivider(weight: 1.5)
 
             featureRow(
-                icon: "sparkles",
+                icon: "paintpalette.fill",
                 tint: JohoColors.pink,
-                title: "Everything that comes next",
-                subtitle: "Premium themes, sync and more join Pro"
+                title: "Premium themes",
+                subtitle: "Wagashi & Kincha artisan palettes — more join Pro over time"
             )
         }
         .background(colors.surface)
