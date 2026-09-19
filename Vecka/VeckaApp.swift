@@ -48,13 +48,17 @@ struct VeckaApp: App {
             Memo.self,
         ])
 
-        // CloudKit sync disabled: SwiftData models need inverse relationships,
-        // optional attributes, and no unique constraints for CloudKit compatibility.
-        // TODO: Enable CloudKit when models are updated for iCloud sync
+        // CloudKit sync ENABLED: all SwiftData models are CloudKit-compatible —
+        // no unique constraints, all stored properties optional or defaulted,
+        // inverse relationships declared on the Contact graph.
+        // `.automatic` mirrors into the first iCloud container in the
+        // entitlements (iCloud.Johansson.Vecka, already declared there).
+        // If the user is signed out of iCloud, SwiftData keeps working
+        // fully local and starts mirroring when an account appears.
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .none  // Disabled until models are CloudKit-compatible
+            cloudKitDatabase: .automatic
         )
 
         do {
@@ -294,6 +298,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     /// Configures UIKit appearance with opaque backgrounds (情報デザイン: no glass/blur)
+    ///
+    /// iOS 27 note (Liquid Glass era): default system chrome is glass, but an
+    /// explicitly provided appearance like this one still wins — 情報デザイン
+    /// deliberately ships opaque, bordered chrome, and this proxy is how the
+    /// UIKit-rendered bars (rare in this SwiftUI app) stay on-brand. The
+    /// system-wide transparency slider does not override explicit
+    /// appearances, so behavior is stable across iOS 26/27 settings.
     private func configureGlassAppearance() {
         // Tab Bar: Opaque background (情報デザイン forbids blur/glass)
         let tabBarAppearance = UITabBarAppearance()

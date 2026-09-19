@@ -28,5 +28,10 @@
 	<string>Onsen Planner uses photos for contact profile pictures, letting you personalize your contacts with custom images.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Onsen Planner shows your calendar events alongside the weekly view, helping you see your schedule at a glance.</string>
+	<!-- CloudKit: lets SwiftData mirroring process silent sync pushes in the background -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	</dict>
 </plist>

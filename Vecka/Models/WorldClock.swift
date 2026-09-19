@@ -12,11 +12,12 @@ import SwiftData
 /// A saved world clock for the Onsen landing page
 @Model
 final class WorldClock {
-    var id: UUID
-    var cityName: String
-    var timezoneIdentifier: String
-    var sortOrder: Int
-    var dateCreated: Date
+    // CloudKit: defaults on all stored properties.
+    var id: UUID = UUID()
+    var cityName: String = ""
+    var timezoneIdentifier: String = ""
+    var sortOrder: Int = 0
+    var dateCreated: Date = Date()
 
     init(
         cityName: String,

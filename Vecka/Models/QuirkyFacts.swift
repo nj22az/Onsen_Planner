@@ -13,11 +13,12 @@ import SwiftData
 
 @Model
 final class QuirkyFact {
-    @Attribute(.unique) var id: String
-    var region: String
-    var category: String
-    var text: String
-    var explanation: String  // 情報デザイン: Detailed explanation for tap-to-expand
+    // CloudKit: no unique constraints; defaults on all stored properties.
+    var id: String = ""
+    var region: String = ""
+    var category: String = ""
+    var text: String = ""
+    var explanation: String = ""  // 情報デザイン: Detailed explanation for tap-to-expand
 
     init(id: String, region: String, category: String, text: String, explanation: String = "") {
         self.id = id

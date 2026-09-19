@@ -13,15 +13,16 @@ import SwiftData
 
 @Model
 final class AppConfiguration {
-    @Attribute(.unique) var key: String
+    // CloudKit: no unique constraints; defaults on all stored properties.
+    var key: String = ""
     var intValue: Int?
     var doubleValue: Double?
     var stringValue: String?
     var boolValue: Bool?
-    var category: String  // "ui", "business", "system", "feature"
-    var configDescription: String
-    var isActive: Bool
-    var validFrom: Date
+    var category: String = ""  // "ui", "business", "system", "feature"
+    var configDescription: String = ""
+    var isActive: Bool = true
+    var validFrom: Date = Date()
     var validTo: Date?
 
     init(
@@ -53,14 +54,14 @@ final class AppConfiguration {
 
 @Model
 final class ValidationRule {
-    @Attribute(.unique) var id: UUID
-    var fieldName: String
-    var validationType: String  // "min_value", "max_value", "required", "regex", "range"
+    var id: UUID = UUID()
+    var fieldName: String = ""
+    var validationType: String = ""  // "min_value", "max_value", "required", "regex", "range"
     var minValue: Double?
     var maxValue: Double?
     var regexPattern: String?
-    var errorMessage: String
-    var isActive: Bool
+    var errorMessage: String = ""
+    var isActive: Bool = true
 
     init(
         id: UUID = UUID(),
@@ -87,13 +88,13 @@ final class ValidationRule {
 
 @Model
 final class AlgorithmParameter {
-    @Attribute(.unique) var id: UUID
-    var algorithmName: String  // "easter_computus", "lunar_conversion", "solstice_calculation"
-    var parameterName: String  // "coefficient_a", "base_day", "year_adjustment"
-    var parameterValue: Double
-    var parameterType: String  // "multiplier", "addend", "divisor", "constant"
-    var algorithmDescription: String
-    var validFrom: Date
+    var id: UUID = UUID()
+    var algorithmName: String = ""  // "easter_computus", "lunar_conversion", "solstice_calculation"
+    var parameterName: String = ""  // "coefficient_a", "base_day", "year_adjustment"
+    var parameterValue: Double = 0
+    var parameterType: String = ""  // "multiplier", "addend", "divisor", "constant"
+    var algorithmDescription: String = ""
+    var validFrom: Date = Date()
     var validTo: Date?
 
     init(
@@ -121,23 +122,23 @@ final class AlgorithmParameter {
 
 @Model
 final class UITheme {
-    @Attribute(.unique) var id: UUID
-    var themeName: String
-    var isActive: Bool
-    var isPremium: Bool
+    var id: UUID = UUID()
+    var themeName: String = ""
+    var isActive: Bool = true
+    var isPremium: Bool = false
 
     // Planetary colors (weekday associations)
-    var mondayColorHex: String
-    var tuesdayColorHex: String
-    var wednesdayColorHex: String
-    var thursdayColorHex: String
-    var fridayColorHex: String
-    var saturdayColorHex: String
-    var sundayColorHex: String
+    var mondayColorHex: String = ""
+    var tuesdayColorHex: String = ""
+    var wednesdayColorHex: String = ""
+    var thursdayColorHex: String = ""
+    var fridayColorHex: String = ""
+    var saturdayColorHex: String = ""
+    var sundayColorHex: String = ""
 
     // Accent colors
-    var primaryAccentHex: String
-    var secondaryAccentHex: String
+    var primaryAccentHex: String = ""
+    var secondaryAccentHex: String = ""
 
     init(
         id: UUID = UUID(),
@@ -174,29 +175,29 @@ final class UITheme {
 
 @Model
 final class TypographyScale {
-    @Attribute(.unique) var id: UUID
-    var scaleName: String  // "default", "large", "compact"
-    var isActive: Bool
+    var id: UUID = UUID()
+    var scaleName: String = ""  // "default", "large", "compact"
+    var isActive: Bool = true
 
     // Font sizes
-    var heroSize: Double
-    var titleLargeSize: Double
-    var titleMediumSize: Double
-    var titleSmallSize: Double
-    var bodyLargeSize: Double
-    var bodyMediumSize: Double
-    var bodySmallSize: Double
-    var captionSize: Double
+    var heroSize: Double = 0
+    var titleLargeSize: Double = 0
+    var titleMediumSize: Double = 0
+    var titleSmallSize: Double = 0
+    var bodyLargeSize: Double = 0
+    var bodyMediumSize: Double = 0
+    var bodySmallSize: Double = 0
+    var captionSize: Double = 0
 
     // Tracking values
-    var tightTracking: Double
-    var normalTracking: Double
-    var wideTracking: Double
+    var tightTracking: Double = 0
+    var normalTracking: Double = 0
+    var wideTracking: Double = 0
 
     // Line spacing
-    var tightLineSpacing: Double
-    var normalLineSpacing: Double
-    var relaxedLineSpacing: Double
+    var tightLineSpacing: Double = 0
+    var normalLineSpacing: Double = 0
+    var relaxedLineSpacing: Double = 0
 
     init(
         id: UUID = UUID(),
@@ -241,23 +242,23 @@ final class TypographyScale {
 
 @Model
 final class SpacingScale {
-    @Attribute(.unique) var id: UUID
-    var scaleName: String
-    var isActive: Bool
+    var id: UUID = UUID()
+    var scaleName: String = ""
+    var isActive: Bool = true
 
-    var extraSmall: Double
-    var small: Double
-    var medium: Double
-    var large: Double
-    var extraLarge: Double
-    var huge: Double
-    var massive: Double
+    var extraSmall: Double = 0
+    var small: Double = 0
+    var medium: Double = 0
+    var large: Double = 0
+    var extraLarge: Double = 0
+    var huge: Double = 0
+    var massive: Double = 0
 
-    var cornerRadius: Double
-    var cardSpacing: Double
-    var sectionSpacing: Double
-    var gridSpacing: Double
-    var minimumTapTarget: Double
+    var cornerRadius: Double = 0
+    var cardSpacing: Double = 0
+    var sectionSpacing: Double = 0
+    var gridSpacing: Double = 0
+    var minimumTapTarget: Double = 0
 
     init(
         id: UUID = UUID(),
@@ -298,13 +299,13 @@ final class SpacingScale {
 
 @Model
 final class IconCatalogItem {
-    @Attribute(.unique) var id: UUID
-    var symbolName: String  // SF Symbol name
-    var displayLabel: String
-    var category: String  // "event", "celebration", "nature", "note", "weather", "holiday"
-    var isPremium: Bool
-    var sortOrder: Int
-    var isActive: Bool
+    var id: UUID = UUID()
+    var symbolName: String = ""  // SF Symbol name
+    var displayLabel: String = ""
+    var category: String = ""  // "event", "celebration", "nature", "note", "weather", "holiday"
+    var isPremium: Bool = false
+    var sortOrder: Int = 0
+    var isActive: Bool = true
 
     init(
         id: UUID = UUID(),

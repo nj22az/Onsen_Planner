@@ -45,7 +45,9 @@ final class CalendarManager {
     private func seedDefaultRules(context: ModelContext) {
         do {
             let existing = try context.fetch(FetchDescriptor<CalendarRule>())
-            var byId = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+            // CloudKit: sync can surface rows with duplicate ids — keep the
+            // first instead of trapping (uniqueKeysWithValues would crash).
+            var byId = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             var didChange = false
 
             let seDefault = CalendarRule(

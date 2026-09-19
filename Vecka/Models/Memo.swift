@@ -50,13 +50,14 @@ final class Memo {
     // MARK: - Core (Every memo has these)
     // ═══════════════════════════════════════════════════════════════════
 
-    var id: UUID
+    // CloudKit: defaults on all stored properties.
+    var id: UUID = UUID()
 
     /// What you want to remember
-    var text: String
+    var text: String = ""
 
     /// When
-    var date: Date
+    var date: Date = Date()
 
     /// Priority (optional)
     var priorityRaw: String?
@@ -66,7 +67,7 @@ final class Memo {
     }
 
     /// When created
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// Type discriminator (stored as string for SwiftData compatibility)
     var memoTypeRaw: String?

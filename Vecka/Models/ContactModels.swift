@@ -69,13 +69,15 @@ enum ContactGroup: String, Codable, CaseIterable {
 
 @Model
 final class Contact {
-    var id: UUID
-    var createdAt: Date
-    var modifiedAt: Date
+    // CloudKit: defaults on all stored properties; relationships declare
+    // explicit inverses (required for CloudKit mirroring).
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
 
     // Name
-    var givenName: String
-    var familyName: String
+    var givenName: String = ""
+    var familyName: String = ""
     var middleName: String?
     var namePrefix: String?
     var nameSuffix: String?
@@ -85,15 +87,15 @@ final class Contact {
     var jobTitle: String?
 
     // Phone numbers - @Relationship required for SwiftData to properly manage child entities
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactPhoneNumber.contact)
     var phoneNumbers: [ContactPhoneNumber]
 
     // Email addresses
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactEmailAddress.contact)
     var emailAddresses: [ContactEmailAddress]
 
     // Postal addresses
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactPostalAddress.contact)
     var postalAddresses: [ContactPostalAddress]
 
     // Dates
@@ -102,15 +104,15 @@ final class Contact {
     /// When nil or true with a birthday date, contact appears in Star page birthdays
     /// Default is true for SwiftData migration of existing records
     var birthdayKnown: Bool = true
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactDate.contact)
     var dates: [ContactDate]
 
     // Social profiles
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactSocialProfile.contact)
     var socialProfiles: [ContactSocialProfile]
 
     // URLs
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactURL.contact)
     var urlAddresses: [ContactURL]
 
     // Notes
@@ -123,7 +125,7 @@ final class Contact {
     var symbolName: String?
 
     // Relations
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \ContactRelation.contact)
     var relations: [ContactRelation]
 
     // iOS Contacts integration
@@ -196,9 +198,12 @@ final class Contact {
 
 @Model
 final class ContactPhoneNumber {
-    var id: UUID
-    var label: String
-    var value: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: String) {
         self.id = UUID()
@@ -217,9 +222,12 @@ final class ContactPhoneNumber {
 
 @Model
 final class ContactEmailAddress {
-    var id: UUID
-    var label: String
-    var value: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: String) {
         self.id = UUID()
@@ -234,14 +242,17 @@ final class ContactEmailAddress {
 
 @Model
 final class ContactPostalAddress {
-    var id: UUID
-    var label: String
-    var street: String
-    var city: String
-    var state: String
-    var postalCode: String
-    var country: String
-    var isoCountryCode: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var street: String = ""
+    var city: String = ""
+    var state: String = ""
+    var postalCode: String = ""
+    var country: String = ""
+    var isoCountryCode: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, street: String = "", city: String = "", state: String = "", postalCode: String = "", country: String = "", isoCountryCode: String = "") {
         self.id = UUID()
@@ -267,9 +278,12 @@ final class ContactPostalAddress {
 
 @Model
 final class ContactDate {
-    var id: UUID
-    var label: String
-    var value: Date
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: Date = Date()
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: Date) {
         self.id = UUID()
@@ -283,11 +297,14 @@ final class ContactDate {
 
 @Model
 final class ContactSocialProfile {
-    var id: UUID
-    var label: String
-    var service: String
-    var username: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var service: String = ""
+    var username: String = ""
     var url: String?
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, service: String, username: String, url: String? = nil) {
         self.id = UUID()
@@ -306,9 +323,12 @@ final class ContactSocialProfile {
 
 @Model
 final class ContactURL {
-    var id: UUID
-    var label: String
-    var value: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: String) {
         self.id = UUID()
@@ -323,9 +343,12 @@ final class ContactURL {
 
 @Model
 final class ContactRelation {
-    var id: UUID
-    var label: String
-    var name: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var name: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, name: String) {
         self.id = UUID()

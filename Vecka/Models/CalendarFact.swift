@@ -14,16 +14,17 @@ import SwiftUI
 
 @Model
 final class CalendarFact {
-    @Attribute(.unique) var id: String
-    var type: String           // "static", "conditional", "weekday", "month"
-    var condition: String      // "always", "weekday", "month", "daysUntilFriday", "daysLeftInMonth"
+    // CloudKit: no unique constraints; defaults on all stored properties.
+    var id: String = ""
+    var type: String = "static"  // "static", "conditional", "weekday", "month"
+    var condition: String = "always" // "always", "weekday", "month", "daysUntilFriday", "daysLeftInMonth"
     var conditionValue: Int?   // For weekday (1-7) or month (1-12)
     var conditionMin: Int?     // For range conditions
     var conditionMax: Int?     // For range conditions
-    var textTemplate: String   // Template with placeholders like {weekOfYear}
-    var icon: String
-    var colorSemantic: String  // "pink", "cyan", "yellow", "green", "purple", "orange"
-    var explanation: String
+    var textTemplate: String = "" // Template with placeholders like {weekOfYear}
+    var icon: String = ""
+    var colorSemantic: String = "purple" // "pink", "cyan", "yellow", "green", "purple", "orange"
+    var explanation: String = ""
 
     init(id: String, type: String, condition: String, conditionValue: Int? = nil,
          conditionMin: Int? = nil, conditionMax: Int? = nil,

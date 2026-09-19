@@ -2,6 +2,24 @@
 
 Logs all changes to documents under `docs/`. Follows JDS conventions: one heading per revision, newest first. System-level changes (registry entries in `nj22az/JDS_Documentation`) are noted but not duplicated.
 
+## Rev F — 2026-09-19
+
+**JDS-PRJ-SFW-002 Rev C: CloudKit enabled; iOS 27 chrome stance documented.**
+
+- §Tech inventory: CloudKit moved from "disabled pending model updates" to
+  ENABLED with the three model-rule changes that made it possible called
+  out (no unique constraints; optional-or-defaulted stored properties;
+  inverse relationships); added duplicate-tolerance note for id-keyed
+  lookups and the `remote-notification`/aps-environment Xcode checklist
+  item; added the iOS 27 Liquid Glass stance (explicit opaque chrome is
+  deliberate and overrides default glass).
+
+Companion code changes (not docs): all nine `@Model` files migrated for
+CloudKit mirroring; `VeckaApp` flipped to `cloudKitDatabase: .automatic`;
+duplicate-tolerant dictionaries in `HolidayManager`/`CalendarManager`;
+`Info.plist` gained the remote-notification background mode. Ship-readiness:
+this fulfills the onboarding page-4 "Sync Everywhere" promise.
+
 ## Rev E — 2026-09-19
 
 **JDS-PRJ-SFW-002 Rev B: async holiday pipeline, iOS 27 `@State` readiness, StoreKit 2 monetization.**

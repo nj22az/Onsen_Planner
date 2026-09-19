@@ -926,7 +926,10 @@ class HolidayManager {
 
         do {
             let existing = try context.fetch(FetchDescriptor<HolidayRule>())
-            let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+            // CloudKit: sync can surface rows with duplicate ids (e.g. two
+            // devices seeded before first sync). Keep the first instead of
+            // trapping; user-modified rows still win the update pass below.
+            let existingById = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             var insertedCount = 0
             var updatedCount = 0
             var insertedByRegion: [String: Int] = [:]
@@ -1057,7 +1060,8 @@ class HolidayManager {
         do {
             let descriptor = FetchDescriptor<HolidayRule>(predicate: #Predicate<HolidayRule> { $0.region == "SE" })
             let rules = try context.fetch(descriptor)
-            let byId = Dictionary(uniqueKeysWithValues: rules.map { ($0.id, $0) })
+            // CloudKit: tolerate duplicate ids produced by sync races.
+            let byId = Dictionary(rules.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
 
             for rule in rules {
                 guard let newKey = mapping[rule.name] else { continue }
