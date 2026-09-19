@@ -2,6 +2,24 @@
 
 Logs all changes to documents under `docs/`. Follows JDS conventions: one heading per revision, newest first. System-level changes (registry entries in `nj22az/JDS_Documentation`) are noted but not duplicated.
 
+## Rev H — 2026-09-19
+
+**JDS-PRJ-SFW-002 Rev E + JDS-REF-SFW-002 Rev B: theme catalog batch 2 (10 more brand palettes).**
+
+- PRJ §Tech inventory: Theme presets bullet updated — fourteen presets
+  (ten free brand palettes + four Vecka Pro artisan themes); premium
+  list extended (Vermilion, Sometsuke join Wagashi and Kincha).
+- JDS-REF-SFW-002 Rev B: provenance tables added for the ten Batch-2
+  themes — Vibes (freee), Cobalt (Findy), Journey (NEWT), Neon (ABEMA),
+  Paddock (JRA), Vision (21_21 DESIGN SIGHT), Wakaba (CAMK 熊本市現代美術館),
+  Utsuwa (KINTO) free; Vermilion (aeru), Sometsuke (1616/arita japan)
+  Vecka Pro. Gating principle recorded: mostly free, artisan set Pro.
+
+Companion code changes (not docs): ten presets appended to
+`theme-presets.json` and `JohoThemeLoader.builtInPresets` (kept in
+sync); `PaywallView` feature row renamed to the shipped Premium themes
+benefit.
+
 ## Rev G — 2026-09-19
 
 **JDS-PRJ-SFW-002 Rev D + new JDS-REF-SFW-002: Japanese-brand theme palettes.**

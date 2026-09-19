@@ -144,7 +144,7 @@ struct PaywallView: View {
                 icon: "paintpalette.fill",
                 tint: JohoColors.pink,
                 title: "Premium themes",
-                subtitle: "Wagashi & Kincha artisan palettes — more join Pro over time"
+                subtitle: "Artisan palettes — Wagashi, Kincha, Vermilion & Sometsuke"
             )
         }
         .background(colors.surface)
