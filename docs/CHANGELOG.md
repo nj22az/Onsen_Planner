@@ -2,6 +2,16 @@
 
 Logs all changes to documents under `docs/`. Follows JDS conventions: one heading per revision, newest first. System-level changes (registry entries in `nj22az/JDS_Documentation`) are noted but not duplicated.
 
+## Rev J — 2026-09-20
+
+**Branch integration: widget resources, release metadata and privacy policy.**
+
+- Added `BRANCH_INTEGRATION.md` recording the selected fixes from `release/1.0` and `claude/publish-readiness-v1`, retained application identity, and outstanding native verification.
+- Added the current `PRIVACY.md`, covering local recovery copies, portable backups, contact export, widget sharing, external links and StoreKit entitlement checks.
+- Updated `RELEASE_CHECKLIST.md` with the policy URL, local-only entitlements, widget resource validation and device smoke checks.
+- Companion changes: 24 holiday labels in nine widget locales; widget URL registration; black launch background; unused capability cleanup; a Settings privacy link; source and compiled-bundle configuration checks.
+- Verification: design-system lint and 112/112 documentation assertions passed; release validation passed; six validator acceptance/failure checks passed. Native build remains unavailable without Xcode, and GitHub Actions remains affected by the reported account billing lock.
+
 ## Rev I — 2026-09-20
 
 **JDS-PRJ-SFW-002 Rev F: reliability and safe recovery; staged CloudKit and Pro sales.**

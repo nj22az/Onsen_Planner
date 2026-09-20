@@ -1,0 +1,26 @@
+/* Widget holiday names, shared with the app. */
+
+"holiday.alla_helgons_dag" = "万聖節";
+"holiday.alla_hjartans_dag" = "バレンタインデー";
+"holiday.annandag_jul" = "ボクシングデー";
+"holiday.annandag_pask" = "復活祭の月曜日";
+"holiday.fars_dag" = "父の日";
+"holiday.forsta_maj" = "メーデー";
+"holiday.hostdagjamning" = "秋分の日";
+"holiday.internationella_kvinnodagen" = "国際女性デー";
+"holiday.julafton" = "クリスマスイブ";
+"holiday.juldagen" = "クリスマス";
+"holiday.kristi_himmelsfardsdag" = "キリスト昇天祭";
+"holiday.langfredagen" = "聖金曜日";
+"holiday.midsommarafton" = "夏至祭前日";
+"holiday.midsommardagen" = "夏至祭";
+"holiday.mors_dag" = "母の日";
+"holiday.nyarsafton" = "大晦日";
+"holiday.nyarsdagen" = "元日";
+"holiday.paskdagen" = "復活祭";
+"holiday.pingstdagen" = "聖霊降臨祭";
+"holiday.sommarsolstand" = "夏至";
+"holiday.sveriges_nationaldag" = "スウェーデン建国記念日";
+"holiday.trettondedag_jul" = "公現祭";
+"holiday.vintersolstand" = "冬至";
+"holiday.virdagjamning" = "春分の日";

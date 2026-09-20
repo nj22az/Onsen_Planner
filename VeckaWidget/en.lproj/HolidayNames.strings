@@ -1,0 +1,26 @@
+/* Widget holiday names, shared with the app. */
+
+"holiday.alla_helgons_dag" = "All Saints' Day";
+"holiday.alla_hjartans_dag" = "Valentine's Day";
+"holiday.annandag_jul" = "Boxing Day";
+"holiday.annandag_pask" = "Easter Monday";
+"holiday.fars_dag" = "Father's Day";
+"holiday.forsta_maj" = "May 1st";
+"holiday.hostdagjamning" = "Autumn Equinox";
+"holiday.internationella_kvinnodagen" = "International Women's Day";
+"holiday.julafton" = "Christmas Eve";
+"holiday.juldagen" = "Christmas Day";
+"holiday.kristi_himmelsfardsdag" = "Ascension Day";
+"holiday.langfredagen" = "Good Friday";
+"holiday.midsommarafton" = "Midsummer Eve";
+"holiday.midsommardagen" = "Midsummer Day";
+"holiday.mors_dag" = "Mother's Day";
+"holiday.nyarsafton" = "New Year's Eve";
+"holiday.nyarsdagen" = "New Year's Day";
+"holiday.paskdagen" = "Easter Sunday";
+"holiday.pingstdagen" = "Pentecost";
+"holiday.sommarsolstand" = "Summer Solstice";
+"holiday.sveriges_nationaldag" = "National Day of Sweden";
+"holiday.trettondedag_jul" = "Epiphany";
+"holiday.vintersolstand" = "Winter Solstice";
+"holiday.virdagjamning" = "Spring Equinox";

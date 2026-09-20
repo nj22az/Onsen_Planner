@@ -118,6 +118,16 @@ struct SettingsView: View {
                     .background(colors.inputBackground)
                     .johoBordered(borderWidth: JohoDimensions.borderThin)
 
+                    if let privacyPolicyURL = ReleaseFeatures.privacyPolicyURL {
+                        Link("Privacy Policy", destination: privacyPolicyURL)
+                            .font(JohoFont.body)
+                            .foregroundStyle(colors.primary)
+                            .padding(JohoDimensions.spacingMD)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(colors.inputBackground)
+                            .johoBordered(borderWidth: JohoDimensions.borderThin)
+                    }
+
                     // Copyright
                     VStack(alignment: .leading, spacing: 6) {
                         Text("© 2025 The Office of Nils Johansson")

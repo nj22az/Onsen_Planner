@@ -35,9 +35,11 @@ print("platform=iOS Simulator,id=" + sorted(candidates, reverse=True)[0][3])'
 }
 
 build_project() {
+    python3 scripts/validate-release-config.py
     xcodebuild build -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
         -destination 'generic/platform=iOS Simulator' -configuration "$1" \
         -derivedDataPath "$DERIVED_DATA" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+    python3 scripts/validate-release-config.py --app "$DERIVED_DATA/Build/Products/$1-iphonesimulator/Vecka.app"
 }
 
 case "${1:-help}" in
@@ -54,6 +56,7 @@ case "${1:-help}" in
         validate_project
         ./scripts/lint-design-system.sh
         ./scripts/validate-docs.sh --quiet
+        python3 scripts/validate-release-config.py
         mkdir -p "$(dirname "$RESULT_PATH")"
         xcodebuild test -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
             -destination "$(simulator_destination)" -configuration Debug \

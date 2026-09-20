@@ -6,7 +6,9 @@ This checklist describes tests that must be performed; unchecked items are **not
 
 - `ReleaseFeatures.cloudSyncEnabled = false`: the application uses persistent local storage. Optional contact relationships and inverses are prepared for future CloudKit validation.
 - `ReleaseFeatures.proSalesEnabled = false`: events, trips, exports and themes remain available. No new purchase can start. This does **not** mark the user as owning Pro.
-- `ReleaseFeatures.privacyPolicyURL = nil`: the placeholder link has been removed. A real hosted policy is required before sales are enabled.
+- `ReleaseFeatures.privacyPolicyURL` points to the public `docs/PRIVACY.md` on main. Settings and the purchase screen use the same policy. Review it again before enabling sales or cloud sync.
+- The existing `Johansson.Vecka` bundle identifier and `group.Johansson.Vecka` App Group are preserved. Unused WeatherKit/iCloud entitlements, location descriptions and remote-notification background mode have been removed; camera permission is retained for the existing image picker.
+- Widget holiday names use an independently bundled `HolidayNames.strings` table in all nine existing app languages. `./build.sh build` checks the actual embedded widget resources after Xcode completes.
 - Storage opening failures show recovery, never an editable in-memory planner. No failed store is deleted.
 
 ## Before merging this branch
@@ -20,12 +22,14 @@ This checklist describes tests that must be performed; unchecked items are **not
 - [ ] Force storage/open/save failures. Verify no success message or editor dismissal, no lost draft, and no writable memory fallback.
 - [ ] Export a backup including photos and contact children; restore into an empty planner, restart, and compare contents. Restore twice and confirm no duplication or overwritten newer edits.
 - [ ] Check recovery and backup sheets on iPhone/iPad, light/dark mode and larger text.
+- [ ] Check the black launch background, Settings privacy link, widget holiday labels in English/Swedish, and widget taps to `vecka://today` and `vecka://facts/...`.
 
 ## Before enabling CloudKit
 
 - [ ] Verify all relationships are optional and inverse links persist after save/reopen.
 - [ ] Decide and implement deterministic reconciliation for logical IDs seeded on two devices; simply picking the first duplicate must not discard user changes.
 - [ ] Validate capabilities, signing and push entitlement using a signed device build.
+- [ ] Restore the validated CloudKit container/services entitlements and remote-notification background mode before enabling cloud sync. The current local-only build deliberately omits them.
 - [ ] Test initial sync, offline changes, account changes, two-device edits, deletion and local-only fallback using the same persistent URL.
 - [ ] Verify remote imports invalidate derived holiday data. The local completion signal alone is not a remote-import observer.
 - [ ] Initialise the development schema, then promote the validated schema to production before release.
@@ -35,7 +39,7 @@ This checklist describes tests that must be performed; unchecked items are **not
 
 - [ ] Create yearly/monthly subscriptions in one subscription group, and the lifetime non-consumable, matching `VeckaProduct` identifiers.
 - [ ] Configure prices, availability and any introductory offer; complete the App Store agreements and purchase metadata.
-- [ ] Publish the actual privacy policy; set `privacyPolicyURL`. Review privacy disclosures for actual behaviour, including CloudKit if enabled.
+- [ ] Verify the published privacy-policy URL is reachable and review App Store privacy disclosures for actual behaviour, including CloudKit if enabled.
 - [ ] Use an Xcode StoreKit configuration and then Apple's sandbox to test purchase, cancellation, pending approval, approval delivery, restore, refund, expiration and grace period.
 - [ ] Test missing/partial products and network failures, retry after recovery, and a cold launch with existing verified purchases.
 - [ ] Confirm an ineligible customer never sees a free-trial promise and an introductory paid offer is not described as free.

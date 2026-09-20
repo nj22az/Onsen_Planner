@@ -6,6 +6,6 @@ enum ReleaseFeatures {
     static let cloudSyncEnabled = false
     static let proSalesEnabled = false
 
-    // Supply the actual hosted policy before enabling Pro sales.
-    static let privacyPolicyURL: URL? = nil
+    // Published with the application source; update when data handling changes.
+    static let privacyPolicyURL = URL(string: "https://github.com/nj22az/Onsen_Planner/blob/main/docs/PRIVACY.md")
 }
