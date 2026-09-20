@@ -22,76 +22,16 @@ struct VeckaApp: App {
         AppearancePreference(rawValue: appearancePreferenceRaw) ?? .system
     }
 
-    /// CloudKit-enabled ModelContainer for iCloud sync across devices
-    /// Requires: iCloud capability + CloudKit container in Xcode project settings
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            // Holiday system
-            HolidayRule.self,
-            HolidayChangeLog.self,
-            CalendarRule.self,
-            // Contact system (8 models)
-            Contact.self,
-            ContactPhoneNumber.self,
-            ContactEmailAddress.self,
-            ContactPostalAddress.self,
-            ContactDate.self,
-            ContactSocialProfile.self,
-            ContactURL.self,
-            ContactRelation.self,
-            // World Clocks
-            WorldClock.self,
-            // Facts
-            QuirkyFact.self,
-            CalendarFact.self,
-            // Unified Memo model (notes, expenses, trips, countdowns)
-            Memo.self,
-        ])
-
-        // CloudKit sync ENABLED: all SwiftData models are CloudKit-compatible —
-        // no unique constraints, all stored properties optional or defaulted,
-        // inverse relationships declared on the Contact graph.
-        // `.automatic` mirrors into the first iCloud container in the
-        // entitlements (iCloud.Johansson.Vecka, already declared there).
-        // If the user is signed out of iCloud, SwiftData keeps working
-        // fully local and starts mirroring when an account appears.
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            // Fallback to local-only if CloudKit fails (e.g., no iCloud account)
-            Log.e("Primary ModelContainer failed: \(error). Falling back to local storage.")
-            let localConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            do {
-                return try ModelContainer(for: schema, configurations: [localConfig])
-            } catch {
-                // CRITICAL: Use in-memory store as LAST RESORT instead of crashing
-                // This allows the app to start even with corrupted persistent store
-                // User will lose data but can at least use the app
-                Log.e("Local ModelContainer failed: \(error). Using in-memory store as fallback.")
-                let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-                do {
-                    return try ModelContainer(for: schema, configurations: [memoryConfig])
-                } catch {
-                    // This should never happen - in-memory stores don't have migration issues
-                    fatalError("Could not create ModelContainer even in-memory: \(error)")
-                }
-            }
-        }
-    }()
+    @State private var persistence = AppPersistence()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if AppEnvironment.isUITesting {
+                if AppEnvironment.isUITesting || AppEnvironment.isUnitTesting {
                     UITestRootView()
                         .environment(storeManager)
-                } else {
+                } else if let sharedModelContainer = persistence.container {
                     AppearanceResolver(preference: appearancePreference) { resolvedMode in
                         ContentView()
                             .environment(navigationManager)
@@ -108,12 +48,13 @@ struct VeckaApp: App {
                             handleWidgetURL(url)
                         }
                         .task {
-                            // Vecka Pro: fetch the App Store catalog and re-verify
-                            // entitlements right after launch. Runs off the
-                            // first-frame path; the paywall retries lazily on
-                            // failure, so no error handling is needed here.
-                            await storeManager.loadProducts()
+                            // Entitlement checks must not wait for product/pricing servers.
+                            // New sales remain disabled until release validation is complete.
                             await storeManager.refreshEntitlements()
+                            if ReleaseFeatures.proSalesEnabled { await storeManager.loadProducts() }
+                        }
+                        .onChange(of: scenePhase) { _, phase in
+                            if phase == .active { Task { await storeManager.refreshEntitlements() } }
                         }
                         .onAppear {
                             Log.i("App launched. System language: \(LanguageManager.shared.currentLanguageCode)")
@@ -129,10 +70,17 @@ struct VeckaApp: App {
                         .fullScreenCover(isPresented: $showOnboarding) {
                             OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
                         }
+                        .modelContainer(sharedModelContainer)
+                } else {
+                    StorageRecoveryView(persistence: persistence)
+                }
+            }
+            .task {
+                if !AppEnvironment.isUITesting && !AppEnvironment.isUnitTesting {
+                    persistence.open()
                 }
             }
         }
-        .modelContainer(sharedModelContainer)
     }
     
     

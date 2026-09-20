@@ -38,10 +38,10 @@ struct ContactListView: View {
 
     // Stats for header subtitle
     private var contactsWithPhone: Int {
-        contacts.filter { $0.phoneNumbers.isNotEmpty }.count
+        contacts.filter { $0.phoneNumberItems.isNotEmpty }.count
     }
     private var contactsWithEmail: Int {
-        contacts.filter { $0.emailAddresses.isNotEmpty }.count
+        contacts.filter { $0.emailAddressItems.isNotEmpty }.count
     }
     private var contactsWithBirthday: Int {
         contacts.filter { $0.birthday != nil }.count
@@ -64,8 +64,8 @@ struct ContactListView: View {
             result = result.filter { contact in
                 contact.displayName.localizedCaseInsensitiveContains(searchText) ||
                 contact.organizationName?.localizedCaseInsensitiveContains(searchText) == true ||
-                contact.emailAddresses.contains { $0.value.localizedCaseInsensitiveContains(searchText) } ||
-                contact.phoneNumbers.contains { $0.value.localizedCaseInsensitiveContains(searchText) }
+                contact.emailAddressItems.contains { $0.value.localizedCaseInsensitiveContains(searchText) } ||
+                contact.phoneNumberItems.contains { $0.value.localizedCaseInsensitiveContains(searchText) }
             }
         }
 
@@ -415,7 +415,7 @@ struct ContactListView: View {
                                     Button { editingContact = contact } label: {
                                         Label("Edit", systemImage: "pencil")
                                     }
-                                    if let phone = contact.phoneNumbers.first {
+                                    if let phone = contact.phoneNumberItems.first {
                                         Button {
                                             if let url = URL(string: "tel:\(phone.value)") {
                                                 UIApplication.shared.open(url)
@@ -640,17 +640,17 @@ struct ContactListView: View {
                     birthdayIndicator(for: contact)
 
                     // Message button - Cyan
-                    if let phone = contact.phoneNumbers.first?.value {
+                    if let phone = contact.phoneNumberItems.first?.value {
                         JohoContactActionButton(action: .message(phone: phone))
                     }
 
                     // Email button - Purple
-                    if let email = contact.emailAddresses.first?.value {
+                    if let email = contact.emailAddressItems.first?.value {
                         JohoContactActionButton(action: .email(address: email))
                     }
 
                     // Phone button - Green
-                    if let phone = contact.phoneNumbers.first?.value {
+                    if let phone = contact.phoneNumberItems.first?.value {
                         JohoContactActionButton(action: .call(phone: phone))
                     }
                 }

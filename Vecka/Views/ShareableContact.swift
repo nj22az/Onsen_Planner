@@ -242,10 +242,10 @@ struct ShareableContactCard: View {
 
     private var contactEntries: [PackagingIngredientsBox.Entry] {
         var out: [PackagingIngredientsBox.Entry] = []
-        for phone in contact.phoneNumbers.prefix(3) {
+        for phone in contact.phoneNumberItems.prefix(3) {
             out.append(.init(label: "TEL", value: phone.value))
         }
-        for email in contact.emailAddresses.prefix(2) {
+        for email in contact.emailAddressItems.prefix(2) {
             out.append(.init(label: "MAIL", value: email.value))
         }
         return out
@@ -253,9 +253,9 @@ struct ShareableContactCard: View {
 
     private var nutritionRows: [PackagingNutritionTable.Row] {
         var rows: [PackagingNutritionTable.Row] = []
-        if !contact.phoneNumbers.isEmpty { rows.append(.init(label: "Phones", value: "\(contact.phoneNumbers.count)")) }
-        if !contact.emailAddresses.isEmpty { rows.append(.init(label: "Emails", value: "\(contact.emailAddresses.count)")) }
-        if !contact.postalAddresses.isEmpty { rows.append(.init(label: "Addresses", value: "\(contact.postalAddresses.count)")) }
+        if !contact.phoneNumberItems.isEmpty { rows.append(.init(label: "Phones", value: "\(contact.phoneNumberItems.count)")) }
+        if !contact.emailAddressItems.isEmpty { rows.append(.init(label: "Emails", value: "\(contact.emailAddressItems.count)")) }
+        if !contact.postalAddressItems.isEmpty { rows.append(.init(label: "Addresses", value: "\(contact.postalAddressItems.count)")) }
         rows.append(.init(label: "Group", value: contact.group.localizedName))
         return rows
     }

@@ -88,15 +88,15 @@ final class Contact {
 
     // Phone numbers - @Relationship required for SwiftData to properly manage child entities
     @Relationship(deleteRule: .cascade, inverse: \ContactPhoneNumber.contact)
-    var phoneNumbers: [ContactPhoneNumber]
+    var phoneNumbers: [ContactPhoneNumber]? = []
 
     // Email addresses
     @Relationship(deleteRule: .cascade, inverse: \ContactEmailAddress.contact)
-    var emailAddresses: [ContactEmailAddress]
+    var emailAddresses: [ContactEmailAddress]? = []
 
     // Postal addresses
     @Relationship(deleteRule: .cascade, inverse: \ContactPostalAddress.contact)
-    var postalAddresses: [ContactPostalAddress]
+    var postalAddresses: [ContactPostalAddress]? = []
 
     // Dates
     var birthday: Date?
@@ -105,15 +105,15 @@ final class Contact {
     /// Default is true for SwiftData migration of existing records
     var birthdayKnown: Bool = true
     @Relationship(deleteRule: .cascade, inverse: \ContactDate.contact)
-    var dates: [ContactDate]
+    var dates: [ContactDate]? = []
 
     // Social profiles
     @Relationship(deleteRule: .cascade, inverse: \ContactSocialProfile.contact)
-    var socialProfiles: [ContactSocialProfile]
+    var socialProfiles: [ContactSocialProfile]? = []
 
     // URLs
     @Relationship(deleteRule: .cascade, inverse: \ContactURL.contact)
-    var urlAddresses: [ContactURL]
+    var urlAddresses: [ContactURL]? = []
 
     // Notes
     var note: String?
@@ -126,7 +126,7 @@ final class Contact {
 
     // Relations
     @Relationship(deleteRule: .cascade, inverse: \ContactRelation.contact)
-    var relations: [ContactRelation]
+    var relations: [ContactRelation]? = []
 
     // iOS Contacts integration
     var cnContactIdentifier: String?
@@ -170,6 +170,43 @@ final class Contact {
         self.urlAddresses = []
         self.relations = []
         self.groupRawValue = group.rawValue
+    }
+
+    // Optional persisted relationships keep their original schema names.
+    // These accessors make nil (including partial sync) behave as an empty list.
+    var phoneNumberItems: [ContactPhoneNumber] {
+        get { phoneNumbers ?? [] }
+        set { phoneNumbers = newValue }
+    }
+
+    var emailAddressItems: [ContactEmailAddress] {
+        get { emailAddresses ?? [] }
+        set { emailAddresses = newValue }
+    }
+
+    var postalAddressItems: [ContactPostalAddress] {
+        get { postalAddresses ?? [] }
+        set { postalAddresses = newValue }
+    }
+
+    var dateItems: [ContactDate] {
+        get { dates ?? [] }
+        set { dates = newValue }
+    }
+
+    var socialProfileItems: [ContactSocialProfile] {
+        get { socialProfiles ?? [] }
+        set { socialProfiles = newValue }
+    }
+
+    var urlAddressItems: [ContactURL] {
+        get { urlAddresses ?? [] }
+        set { urlAddresses = newValue }
+    }
+
+    var relationItems: [ContactRelation] {
+        get { relations ?? [] }
+        set { relations = newValue }
     }
 
     var displayName: String {
@@ -397,19 +434,19 @@ extension Contact {
         }
 
         // Phone numbers
-        for phone in phoneNumbers {
+        for phone in phoneNumberItems {
             let type = phone.label.uppercased().replacingOccurrences(of: " ", with: "")
             vcard += "TEL;TYPE=\(type):\(phone.value)\n"
         }
 
         // Email addresses
-        for email in emailAddresses {
+        for email in emailAddressItems {
             let type = email.label.uppercased()
             vcard += "EMAIL;TYPE=\(type):\(email.value)\n"
         }
 
         // Postal addresses
-        for address in postalAddresses {
+        for address in postalAddressItems {
             let type = address.label.uppercased()
             vcard += "ADR;TYPE=\(type):;;\(address.street);\(address.city);\(address.state);\(address.postalCode);\(address.country)\n"
         }
@@ -420,12 +457,12 @@ extension Contact {
         }
 
         // URLs
-        for url in urlAddresses {
+        for url in urlAddressItems {
             vcard += "URL:\(url.value)\n"
         }
 
         // Social profiles
-        for profile in socialProfiles {
+        for profile in socialProfileItems {
             if let url = profile.url {
                 vcard += "X-SOCIALPROFILE;TYPE=\(profile.service):\(url)\n"
             }
@@ -477,10 +514,10 @@ extension Contact {
                 contact.jobTitle = value
             } else if key.hasPrefix("TEL") {
                 let label = extractLabel(from: key) ?? "other"
-                contact.phoneNumbers.append(ContactPhoneNumber(label: label, value: value))
+                contact.phoneNumberItems.append(ContactPhoneNumber(label: label, value: value))
             } else if key.hasPrefix("EMAIL") {
                 let label = extractLabel(from: key) ?? "other"
-                contact.emailAddresses.append(ContactEmailAddress(label: label, value: value))
+                contact.emailAddressItems.append(ContactEmailAddress(label: label, value: value))
             } else if key.hasPrefix("BDAY") {
                 contact.birthday = DateFormatterCache.isoDate.date(from: value)
             } else if key.hasPrefix("NOTE") {

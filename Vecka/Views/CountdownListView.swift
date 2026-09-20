@@ -69,6 +69,9 @@ struct CountdownListView: View {
             }
             .presentationCornerRadius(16)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .plannerBackupRestored)) { _ in
+            loadCustomCountdowns()
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }

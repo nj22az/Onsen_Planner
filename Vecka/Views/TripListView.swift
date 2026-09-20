@@ -418,6 +418,8 @@ struct JohoTripEditorSheet: View {
         _endDay = State(initialValue: calendar.component(.day, from: endDateDefault))
     }
 
+    @State private var saveError: String?
+
     var body: some View {
         // 情報デザイン: UNIFIED BENTO PILLBOX - entire editor is one compartmentalized box
         VStack(spacing: 0) {
@@ -475,8 +477,7 @@ struct JohoTripEditorSheet: View {
 
                     // RIGHT: Save button (72pt)
                     Button {
-                        saveTrip()
-                        dismiss()
+                        if saveTrip() { dismiss() }
                     } label: {
                         Text("Save")
                             .font(JohoFont.bodySmallBold)
@@ -747,6 +748,7 @@ struct JohoTripEditorSheet: View {
 
             Spacer()
         }
+        .plannerSaveError($saveError)
         .johoBackground()
         .navigationBarHidden(true)
     }
@@ -766,9 +768,9 @@ struct JohoTripEditorSheet: View {
         return range.count
     }
 
-    private func saveTrip() {
+    private func saveTrip() -> Bool {
         let trimmedDestination = destination.trimmed
-        guard !trimmedDestination.isEmpty else { return }
+        guard !trimmedDestination.isEmpty else { return false }
 
         // Create trip as Memo - just destination + dates, optionally notes
         let memo = Memo.trip(
@@ -783,8 +785,11 @@ struct JohoTripEditorSheet: View {
         do {
             try modelContext.save()
             HapticManager.notification(.success)
+            return true
         } catch {
-            Log.w("Failed to save trip: \(error.localizedDescription)")
+            modelContext.rollback()
+            saveError = error.localizedDescription
+            return false
         }
     }
 }

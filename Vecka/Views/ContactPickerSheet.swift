@@ -34,8 +34,8 @@ struct ContactPickerSheet: View {
         let search = searchText.lowercased()
         return available.filter { contact in
             contact.displayName.lowercased().contains(search) ||
-            contact.phoneNumbers.contains { $0.value.contains(search) } ||
-            contact.emailAddresses.contains { $0.value.lowercased().contains(search) }
+            contact.phoneNumberItems.contains { $0.value.contains(search) } ||
+            contact.emailAddressItems.contains { $0.value.lowercased().contains(search) }
         }
     }
 
@@ -139,12 +139,12 @@ struct ContactPickerSheet: View {
                         .lineLimit(1)
 
                     // Subtitle: phone or email
-                    if let phone = contact.phoneNumbers.first?.value {
+                    if let phone = contact.phoneNumberItems.first?.value {
                         Text(phone)
                             .font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundStyle(colors.primary.opacity(JohoDimensions.opacityHeavy))
                             .lineLimit(1)
-                    } else if let email = contact.emailAddresses.first?.value {
+                    } else if let email = contact.emailAddressItems.first?.value {
                         Text(email)
                             .font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundStyle(colors.primary.opacity(JohoDimensions.opacityHeavy))

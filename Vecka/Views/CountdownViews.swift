@@ -290,6 +290,7 @@ struct CountdownPickerSheet: View {
             .environment(\.editMode, $editMode)
         }
         .onAppear { loadCustomCountdowns(); loadFavorites() }
+        .onReceive(NotificationCenter.default.publisher(for: .plannerBackupRestored)) { _ in loadCustomCountdowns() }
         .sheet(isPresented: $showingCustomDialog) {
             CustomCountdownDialog(
                 name: $newCustomName,
@@ -541,6 +542,8 @@ struct CustomCountdownDialog: View {
         return Array((current - 10)...(current + 10))
     }
 
+    @State private var saveError: String?
+
     var body: some View {
         // 情報デザイン: UNIFIED BENTO PILLBOX - entire editor is one compartmentalized box
         VStack(spacing: 0) {
@@ -598,7 +601,7 @@ struct CustomCountdownDialog: View {
 
                     // RIGHT: Save button (72pt)
                     Button {
-                        saveCustomCountdown()
+                        guard saveCustomCountdown() else { return }
                         selectedCountdown = .custom
                         onSave()
                         dismiss()
@@ -850,6 +853,7 @@ struct CustomCountdownDialog: View {
 
             Spacer()
         }
+        .plannerSaveError($saveError)
         .johoBackground()
         .navigationBarHidden(true)
         .sheet(isPresented: $showingIconPicker) {
@@ -891,38 +895,26 @@ struct CustomCountdownDialog: View {
 
     @Environment(\.modelContext) private var modelContext
 
-    private func saveCustomCountdown() {
-        // Save to SwiftData as Memo countdown
-        let event = Memo.countdown(
-            name,
-            targetDate: date,
-            icon: iconName,
-            colorHex: "#805AD5"  // 情報デザイン: Events ALWAYS use purple
-        )
-        modelContext.insert(event)
-        do {
-            try modelContext.save()
-        } catch {
-            Log.w("Failed to save event: \(error.localizedDescription)")
-        }
-
-        // Also save to UserDefaults for legacy countdown banner compatibility
-        // Include tasks for event preparation checklist (情報デザイン feature)
+    private func saveCustomCountdown() -> Bool {
         let countdown = CustomCountdown(name: name, date: date, isAnnual: isAnnual, iconName: iconName, tasks: tasks)
-        var existingCountdowns: [CustomCountdown] = []
-        if let data = UserDefaults.standard.data(forKey: "customCountdowns"),
-           let countdowns = try? JSONDecoder().decode([CustomCountdown].self, from: data) {
-            existingCountdowns = countdowns
-        }
-        if existingCountdowns.count >= 2 { existingCountdowns.removeFirst() }
-        existingCountdowns.append(countdown)
-
-        if let data = try? JSONEncoder().encode(existingCountdowns) {
+        do {
+            var existing: [CustomCountdown] = []
+            if let data = UserDefaults.standard.data(forKey: "customCountdowns") {
+                existing = try JSONDecoder().decode([CustomCountdown].self, from: data)
+            }
+            existing.append(countdown)
+            let data = try JSONEncoder().encode(existing)
+            let selected = try JSONEncoder().encode(countdown)
+            let event = Memo.countdown(name, targetDate: date, icon: iconName, colorHex: "#805AD5")
+            modelContext.insert(event)
+            try modelContext.save()
             UserDefaults.standard.set(data, forKey: "customCountdowns")
-        }
-
-        if let selectedData = try? JSONEncoder().encode(countdown) {
-            UserDefaults.standard.set(selectedData, forKey: "selectedCustomCountdown")
+            UserDefaults.standard.set(selected, forKey: "selectedCustomCountdown")
+            return true
+        } catch {
+            modelContext.rollback()
+            saveError = error.localizedDescription
+            return false
         }
     }
 }

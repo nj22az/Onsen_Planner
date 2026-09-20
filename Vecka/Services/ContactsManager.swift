@@ -159,19 +159,19 @@ class ContactsManager {
         cnContact.jobTitle = contact.jobTitle ?? ""
 
         // Phone numbers
-        cnContact.phoneNumbers = contact.phoneNumbers.map { phone in
+        cnContact.phoneNumbers = contact.phoneNumberItems.map { phone in
             let label = Self.labelToCNLabel(phone.label, type: .phone)
             return CNLabeledValue(label: label, value: CNPhoneNumber(stringValue: phone.value))
         }
 
         // Email addresses
-        cnContact.emailAddresses = contact.emailAddresses.map { email in
+        cnContact.emailAddresses = contact.emailAddressItems.map { email in
             let label = Self.labelToCNLabel(email.label, type: .email)
             return CNLabeledValue(label: label, value: email.value as NSString)
         }
 
         // Postal addresses
-        cnContact.postalAddresses = contact.postalAddresses.map { address in
+        cnContact.postalAddresses = contact.postalAddressItems.map { address in
             let cnAddress = CNMutablePostalAddress()
             cnAddress.street = address.street
             cnAddress.city = address.city
@@ -226,19 +226,19 @@ class ContactsManager {
         contact.jobTitle = cnContact.jobTitle.isEmpty ? nil : cnContact.jobTitle
 
         // Phone numbers
-        contact.phoneNumbers = cnContact.phoneNumbers.map { labeledValue in
+        contact.phoneNumberItems = cnContact.phoneNumbers.map { labeledValue in
             let label = Self.cnLabelToLabel(labeledValue.label, defaultLabel: "other")
             return ContactPhoneNumber(label: label, value: labeledValue.value.stringValue)
         }
 
         // Email addresses
-        contact.emailAddresses = cnContact.emailAddresses.map { labeledValue in
+        contact.emailAddressItems = cnContact.emailAddresses.map { labeledValue in
             let label = Self.cnLabelToLabel(labeledValue.label, defaultLabel: "other")
             return ContactEmailAddress(label: label, value: labeledValue.value as String)
         }
 
         // Postal addresses
-        contact.postalAddresses = cnContact.postalAddresses.map { labeledValue in
+        contact.postalAddressItems = cnContact.postalAddresses.map { labeledValue in
             let label = Self.cnLabelToLabel(labeledValue.label, defaultLabel: "other")
             let cnAddress = labeledValue.value
             return ContactPostalAddress(
@@ -265,7 +265,7 @@ class ContactsManager {
         }
 
         // Dates
-        contact.dates = cnContact.dates.compactMap { labeledValue in
+        contact.dateItems = cnContact.dates.compactMap { labeledValue in
             let nsDateComponents = labeledValue.value
             var dateComponents = DateComponents()
             dateComponents.year = nsDateComponents.year == NSDateComponentUndefined ? nil : nsDateComponents.year
@@ -278,13 +278,13 @@ class ContactsManager {
         }
 
         // URLs
-        contact.urlAddresses = cnContact.urlAddresses.map { labeledValue in
+        contact.urlAddressItems = cnContact.urlAddresses.map { labeledValue in
             let label = Self.cnLabelToLabel(labeledValue.label, defaultLabel: "other")
             return ContactURL(label: label, value: labeledValue.value as String)
         }
 
         // Social profiles
-        contact.socialProfiles = cnContact.socialProfiles.map { labeledValue in
+        contact.socialProfileItems = cnContact.socialProfiles.map { labeledValue in
             let profile = labeledValue.value
             return ContactSocialProfile(
                 label: Self.cnLabelToLabel(labeledValue.label, defaultLabel: "other"),
