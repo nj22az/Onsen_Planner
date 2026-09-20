@@ -20,12 +20,14 @@ enum HolidayRuleType: String, Codable {
 
 @Model
 final class HolidayRule {
-    @Attribute(.unique) var id: String
+    // CloudKit: no unique constraints; every stored property is optional or
+    // has a default value. Uniqueness of `id` is enforced by seeding logic.
+    var id: String = ""
 
-    var name: String
-    var region: String // "SE", "US", "VN", "CUSTOM"
+    var name: String = ""
+    var region: String = "" // "SE", "US", "VN", "CUSTOM"
     @Attribute(originalName: "isRedDay")
-    var isBankHoliday: Bool // True = Bank Holiday, False = Observance
+    var isBankHoliday: Bool = false // True = Bank Holiday, False = Observance
 
     /// Optional user-facing title override (shown instead of localization key or name).
     var titleOverride: String?
@@ -58,7 +60,7 @@ final class HolidayRule {
     var originalDefaultJSON: String?
 
     // Rule Configuration
-    var type: HolidayRuleType
+    var type: HolidayRuleType = .fixed
     
     // Parameters (Optional based on type)
     var month: Int?

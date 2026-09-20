@@ -1,9 +1,9 @@
 # JDS-PRJ-SFW-002 — Onsen Planner
 
 **Doc No:** JDS-PRJ-SFW-002
-**Rev:** A
+**Rev:** F
 **Status:** CURRENT
-**Date:** 2026-05-27
+**Date:** 2026-09-20
 **Author:** Nils Johansson
 
 ---
@@ -25,10 +25,15 @@ Built with SwiftUI, SwiftData, WidgetKit, EventKit, and the Contacts framework. 
 ## Tech inventory
 
 - **UI:** SwiftUI exclusively. No UIKit views (UIKit only via `AppDelegate` for orientation lock and appearance defaults).
-- **Persistence:** SwiftData with a fallback chain — primary store → local-only → in-memory (last resort to keep the app launchable on a corrupted store).
-- **CloudKit:** disabled at the configuration level (`cloudKitDatabase: .none`) pending model updates for CloudKit compatibility (inverse relationships, optional attributes, no unique constraints).
+- **Persistence:** durable local SwiftData store; a pre-upgrade recovery copy, explicit local-only configuration, and a recovery screen if opening fails. No editable in-memory fallback. Portable JSON backup/restore is available without Pro; restore adds missing records and preserves existing entries. See `docs/RELEASE_CHECKLIST.md` for scope and migration gates.
+- **CloudKit:** staged behind `ReleaseFeatures.cloudSyncEnabled = false`. Contact relationships are optional with explicit inverses and nil-safe accessors. Activation requires migration, duplicate reconciliation, remote-import refresh, signing and two-device tests; it is not currently advertised as active.
+- **iOS 27 (Liquid Glass era) stance:** the design system deliberately ships opaque, bordered chrome. Navigation bars use `.toolbarBackground(colors.surface, visible)` (`JohoViewModifiers`) and UIKit bars use explicit opaque appearances (`AppDelegate.configureGlassAppearance`) — explicit appearances override default glass and are stable across the system transparency slider. No glass materials anywhere (enforced by lint rule `glass`). Onboarding's `fullScreenCover` roots its own opaque surface.
+- **Holiday cache pipeline:** `HolidayManager.calculateAndCacheHolidays` snapshots rules into `Sendable` value types on the main actor, computes the years × rules date engine on a detached background task (cancellable; generation-guarded so stale results never apply), and posts the cache back to the main actor. Keeps launch and year-scrolling off the main thread. Accepted results increment an observable cache revision; calendar indicators rebuild after completion. Background/static readers retain the lock-protected cache.
 - **External data:** EventKit (calendars), Contacts, Core Location (weather context, optional), Photos, Camera (QR import).
-- **Build:** `./build.sh build|test|widget-test|archive|clean`. Uses `xcodebuild` with code signing disabled for local builds. Default destination is iPhone 17 Pro simulator.
+- **Monetization:** staged behind `ReleaseFeatures.proSalesEnabled = false`, keeping existing capabilities available. `StoreManager` has explicit catalog, entitlement and purchase states with retries, restore feedback, pending-approval protection and verified transaction updates. Product-fetch failures do not revoke access. Cached ownership is presentation-only until StoreKit verification. `AppleProStoreClient` isolates StoreKit for recovery tests.
+- **Theme presets:** JSON-driven (`Vecka/Resources/theme-presets.json` is canonical at runtime, `JohoThemeLoader.builtInPresets` is the fallback — the two must stay in sync). Eighteen presets: Default, Nordic, Earth, Ink plus fourteen brand-palette themes adapted from Japanese brand `DESIGN.md` files ([kzhrknt/awesome-design-md-jp](https://github.com/kzhrknt/awesome-design-md-jp), MIT) — Teal (note.com), Stone (SmartHR), Vibes (freee), Cobalt (Findy), Journey (NEWT), Neon (ABEMA), Paddock (JRA), Vision (21_21 DESIGN SIGHT), Wakaba (CAMK) and Utsuwa (KINTO) free; Wagashi (Funabashiya 船橋屋), Kincha (Adachi Museum 足立美術館), Vermilion (aeru) and Sometsuke (1616/arita japan) on Vecka Pro. Provenance and add-a-theme checklist in `docs/JDS-REF-SFW-002_theme-palettes.md`.
+- **iOS 27 readiness:** `@State` properties are initialized in exactly one place (declaration or init) per the iOS 27 `@State` macro semantics; unresolved hazards were fixed in `ExpenseEntryView`, `JohoEditorSheets`, and `MemoEditorView` (`JohoTimePicker`).
+- **Build:** `./build.sh build|test|widget-test|archive|clean`, shared Vecka scheme, automatic available simulator selection (override `VECKA_DESTINATION`). Unit-test failures fail CI. Mac build, migration and device evidence remain required.
 
 ## Source layout
 

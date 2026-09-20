@@ -11,6 +11,7 @@ import Foundation
 
 // MARK: - App Runtime Flags
 enum AppEnvironment {
+    static let isUnitTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     static let isUITesting = ProcessInfo.processInfo.arguments.contains("-ui-testing")
     static let disableAnimations = ProcessInfo.processInfo.arguments.contains("-disable-animations") || isUITesting
 }

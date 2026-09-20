@@ -204,7 +204,7 @@ struct DailyNotesView: View {
     private var holidaysForDay: [HolidayCacheItem]? {
         // Use Calendar.current to match HolidayManager cache keying
         let day = Calendar.current.startOfDay(for: selectedDate)
-        return HolidayManager.cache[day]
+        return HolidayManager.shared.holidayCache[day]
     }
 
     private func createNote(content: String) {

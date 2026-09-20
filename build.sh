@@ -1,267 +1,89 @@
 #!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")"
 
-# Vecka iOS App Build Script
-# Comprehensive build script for main app, widget extension, and shared framework
-# Author: DevOps Engineer
-# Usage: ./build.sh [clean|build|test|archive|widget-test]
-
-set -e  # Exit on any error
-
-# Configuration
-PROJECT_NAME="Vecka"
-SCHEME_NAME="Vecka"
 PROJECT_FILE="Vecka.xcodeproj"
-BUILD_CONFIG="Debug"
-DESTINATION='platform=iOS Simulator,name=iPhone 17 Pro'
+SCHEME_NAME="Vecka"
+DERIVED_DATA="${VECKA_DERIVED_DATA:-$PWD/build/DerivedData}"
+RESULT_PATH="${VECKA_TEST_RESULTS:-$PWD/build/TestResults-$(date +%Y%m%d-%H%M%S).xcresult}"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Helper functions
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Function to display usage
-show_usage() {
-    echo "Usage: $0 [COMMAND]"
-    echo ""
-    echo "Commands:"
-    echo "  clean          Clean build directories"
-    echo "  build          Build all targets (Debug)"
-    echo "  build-release  Build all targets (Release)"
-    echo "  test           Run unit tests (lint runs first)"
-    echo "  widget-test    Test widget extension specifically"
-    echo "  lint           Run the Joho Design System linter"
-    echo "  validate-docs  Verify JDS-MAN-SFW-001 matches Swift source"
-    echo "  archive        Create archive build"
-    echo "  validate       Validate project configuration"
-    echo "  help           Show this help message"
-    echo ""
-    echo "Examples:"
-    echo "  $0 clean"
-    echo "  $0 build"
-    echo "  $0 test"
-    echo "  $0 lint"
-    echo "  $0 widget-test"
-}
-
-# Function to validate project setup
 validate_project() {
-    log_info "Validating project configuration..."
-    
-    # Check if project file exists
-    if [ ! -d "$PROJECT_FILE" ]; then
-        log_error "Project file $PROJECT_FILE not found!"
-        exit 1
-    fi
-    
-    # Check if we're in the right directory
-    if [ ! -d "Vecka" ] || [ ! -d "VeckaWidget" ]; then
-        log_error "Missing required directories. Please run from project root."
-        exit 1
-    fi
-    
-    # Check Xcode version
-    XCODE_VERSION=$(xcodebuild -version | head -n 1)
-    log_info "Using $XCODE_VERSION"
-    
-    log_success "Project validation passed"
+    command -v xcodebuild >/dev/null || { echo 'Xcode is required. Run this command on a Mac.' >&2; exit 1; }
+    xcodebuild -version
+    test -f "$PROJECT_FILE/xcshareddata/xcschemes/Vecka.xcscheme"
 }
 
-# Function to clean build
-clean_build() {
-    log_info "Cleaning build directories..."
-    
-    xcodebuild clean \
-        -project "$PROJECT_FILE" \
-        -scheme "$SCHEME_NAME" \
-        -destination "$DESTINATION"
-    
-    # Clean derived data
-    if [ -n "$BUILD_DIR" ]; then
-        rm -rf "$BUILD_DIR"
-        log_info "Cleaned derived data directory"
+simulator_destination() {
+    if [ -n "${VECKA_DESTINATION:-}" ]; then
+        printf '%s\n' "$VECKA_DESTINATION"
+        return
     fi
-    
-    log_success "Clean completed"
+    xcrun simctl list devices available --json | python3 -c '
+import json, re, sys
+devices = json.load(sys.stdin)["devices"]
+candidates = []
+for runtime, rows in devices.items():
+    match = re.search(r"iOS-(\d+)(?:-(\d+))?", runtime)
+    if not match or int(match[1]) < 18:
+        continue
+    for row in rows:
+        if row.get("isAvailable") and row["name"].startswith("iPhone"):
+            candidates.append((int(match[1]), int(match[2] or 0), row["state"] == "Booted", row["udid"]))
+if not candidates:
+    sys.exit("No available iPhone simulator with iOS 18 or newer. Install one in Xcode or set VECKA_DESTINATION.")
+print("platform=iOS Simulator,id=" + sorted(candidates, reverse=True)[0][3])'
 }
 
-# Function to build all targets
 build_project() {
-    local config=${1:-$BUILD_CONFIG}
-    log_info "Building project with configuration: $config"
-    
-    xcodebuild build \
-        -project "$PROJECT_FILE" \
-        -scheme "$SCHEME_NAME" \
-        -destination "$DESTINATION" \
-        -configuration "$config" \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGNING_ALLOWED=NO
-    
-    log_success "Build completed successfully"
+    python3 scripts/validate-release-config.py
+    xcodebuild build -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
+        -destination 'generic/platform=iOS Simulator' -configuration "$1" \
+        -derivedDataPath "$DERIVED_DATA" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+    python3 scripts/validate-release-config.py --app "$DERIVED_DATA/Build/Products/$1-iphonesimulator/Vecka.app"
 }
 
-# Function to run the design-system linter
-run_lint() {
-    log_info "Running Joho Design System linter..."
-
-    if [ ! -x "./scripts/lint-design-system.sh" ]; then
-        log_error "Linter not found at ./scripts/lint-design-system.sh"
-        exit 1
-    fi
-
-    ./scripts/lint-design-system.sh
-    log_success "Lint completed"
-}
-
-# Function to validate the design-system manual against Swift source
-run_validate_docs() {
-    log_info "Validating JDS-MAN-SFW-001 against Swift source..."
-
-    if [ ! -x "./scripts/validate-docs.sh" ]; then
-        log_error "Validator not found at ./scripts/validate-docs.sh"
-        exit 1
-    fi
-
-    ./scripts/validate-docs.sh --quiet
-    log_success "Doc validation completed"
-}
-
-# Function to run tests
-run_tests() {
-    run_lint
-    run_validate_docs
-
-    log_info "Running unit tests..."
-
-    xcodebuild test \
-        -project "$PROJECT_FILE" \
-        -scheme "$SCHEME_NAME" \
-        -destination "$DESTINATION" \
-        -configuration "$BUILD_CONFIG" \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGNING_ALLOWED=NO
-
-    log_success "Tests completed"
-}
-
-# Function to test widget specifically
-test_widget() {
-    log_info "Testing widget extension build..."
-    
-    # Build just the widget extension
-    xcodebuild build \
-        -project "$PROJECT_FILE" \
-        -target "VeckaWidget" \
-        -destination "$DESTINATION" \
-        -configuration "$BUILD_CONFIG" \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGNING_ALLOWED=NO
-    
-    log_success "Widget extension build test completed"
-}
-
-# Function to create archive
-archive_project() {
-    log_info "Creating archive build..."
-    
-    xcodebuild archive \
-        -project "$PROJECT_FILE" \
-        -scheme "$SCHEME_NAME" \
-        -configuration "Release" \
-        -archivePath "./build/Vecka.xcarchive" \
-        CODE_SIGNING_REQUIRED=NO \
-        CODE_SIGNING_ALLOWED=NO
-    
-    log_success "Archive created at ./build/Vecka.xcarchive"
-}
-
-# Function to show build summary
-show_build_summary() {
-    log_info "Build Summary:"
-    echo "  Project: $PROJECT_NAME"
-    echo "  Targets: Main App (Vecka), Widget Extension (VeckaWidget), Shared Framework (VeckaShared)"
-    echo "  Bundle IDs:"
-    echo "    - Main App: Johansson.Vecka"
-    echo "    - Widget: Johansson.Vecka.VeckaWidget"
-    echo "    - Shared: Johansson.VeckaShared"
-    echo "  Deployment Target: iOS 17.0+ (Widget), iOS 18.0+ (Main App)"
-    echo "  Configuration: $BUILD_CONFIG"
-    echo "  Destination: $DESTINATION"
-}
-
-# Main script logic
-main() {
-    local command=${1:-help}
-    
-    case "$command" in
-        clean)
-            validate_project
-            clean_build
-            ;;
-        build)
-            validate_project
-            clean_build
-            build_project "Debug"
-            show_build_summary
-            ;;
-        build-release)
-            validate_project
-            clean_build
-            build_project "Release"
-            show_build_summary
-            ;;
-        test)
-            validate_project
-            run_tests
-            ;;
-        lint)
-            run_lint
-            ;;
-        validate-docs)
-            run_validate_docs
-            ;;
-        widget-test)
-            validate_project
-            test_widget
-            ;;
-        archive)
-            validate_project
-            clean_build
-            archive_project
-            ;;
-        validate)
-            validate_project
-            log_success "Project validation completed"
-            ;;
-        help|--help|-h)
-            show_usage
-            ;;
-        *)
-            log_error "Unknown command: $command"
-            show_usage
-            exit 1
-            ;;
-    esac
-}
-
-# Run main function with all arguments
-main "$@"
+case "${1:-help}" in
+    lint) ./scripts/lint-design-system.sh ;;
+    validate-docs) ./scripts/validate-docs.sh --quiet ;;
+    validate) validate_project ;;
+    build|build-release)
+        validate_project
+        config=Debug
+        if [ "$1" = build-release ]; then config=Release; fi
+        build_project "$config"
+        ;;
+    test)
+        validate_project
+        ./scripts/lint-design-system.sh
+        ./scripts/validate-docs.sh --quiet
+        python3 scripts/validate-release-config.py
+        mkdir -p "$(dirname "$RESULT_PATH")"
+        xcodebuild test -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
+            -destination "$(simulator_destination)" -configuration Debug \
+            -derivedDataPath "$DERIVED_DATA" -resultBundlePath "$RESULT_PATH" \
+            -parallel-testing-enabled NO -only-testing:VeckaTests \
+            CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        ;;
+    widget-test)
+        validate_project
+        xcodebuild build -project "$PROJECT_FILE" -target VeckaWidgetExtension \
+            -sdk iphonesimulator -configuration Debug CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        ;;
+    clean)
+        validate_project
+        xcodebuild clean -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath "$DERIVED_DATA"
+        ;;
+    archive)
+        validate_project
+        # Unsigned archive only; distribution signing and upload remain separate.
+        xcodebuild archive -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
+            -destination 'generic/platform=iOS' -configuration Release \
+            -archivePath "$PWD/build/Vecka.xcarchive" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+        ;;
+    help|--help|-h)
+        echo 'Usage: ./build.sh [build|build-release|test|widget-test|lint|validate-docs|validate|clean|archive]'
+        echo 'Set VECKA_DESTINATION to override the automatically selected iOS simulator.'
+        ;;
+    *) echo "Unknown command: $1" >&2; exit 1 ;;
+esac

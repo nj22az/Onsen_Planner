@@ -69,13 +69,15 @@ enum ContactGroup: String, Codable, CaseIterable {
 
 @Model
 final class Contact {
-    var id: UUID
-    var createdAt: Date
-    var modifiedAt: Date
+    // CloudKit: defaults on all stored properties; relationships declare
+    // explicit inverses (required for CloudKit mirroring).
+    var id: UUID = UUID()
+    var createdAt: Date = Date()
+    var modifiedAt: Date = Date()
 
     // Name
-    var givenName: String
-    var familyName: String
+    var givenName: String = ""
+    var familyName: String = ""
     var middleName: String?
     var namePrefix: String?
     var nameSuffix: String?
@@ -85,16 +87,16 @@ final class Contact {
     var jobTitle: String?
 
     // Phone numbers - @Relationship required for SwiftData to properly manage child entities
-    @Relationship(deleteRule: .cascade)
-    var phoneNumbers: [ContactPhoneNumber]
+    @Relationship(deleteRule: .cascade, inverse: \ContactPhoneNumber.contact)
+    var phoneNumbers: [ContactPhoneNumber]? = []
 
     // Email addresses
-    @Relationship(deleteRule: .cascade)
-    var emailAddresses: [ContactEmailAddress]
+    @Relationship(deleteRule: .cascade, inverse: \ContactEmailAddress.contact)
+    var emailAddresses: [ContactEmailAddress]? = []
 
     // Postal addresses
-    @Relationship(deleteRule: .cascade)
-    var postalAddresses: [ContactPostalAddress]
+    @Relationship(deleteRule: .cascade, inverse: \ContactPostalAddress.contact)
+    var postalAddresses: [ContactPostalAddress]? = []
 
     // Dates
     var birthday: Date?
@@ -102,16 +104,16 @@ final class Contact {
     /// When nil or true with a birthday date, contact appears in Star page birthdays
     /// Default is true for SwiftData migration of existing records
     var birthdayKnown: Bool = true
-    @Relationship(deleteRule: .cascade)
-    var dates: [ContactDate]
+    @Relationship(deleteRule: .cascade, inverse: \ContactDate.contact)
+    var dates: [ContactDate]? = []
 
     // Social profiles
-    @Relationship(deleteRule: .cascade)
-    var socialProfiles: [ContactSocialProfile]
+    @Relationship(deleteRule: .cascade, inverse: \ContactSocialProfile.contact)
+    var socialProfiles: [ContactSocialProfile]? = []
 
     // URLs
-    @Relationship(deleteRule: .cascade)
-    var urlAddresses: [ContactURL]
+    @Relationship(deleteRule: .cascade, inverse: \ContactURL.contact)
+    var urlAddresses: [ContactURL]? = []
 
     // Notes
     var note: String?
@@ -123,8 +125,8 @@ final class Contact {
     var symbolName: String?
 
     // Relations
-    @Relationship(deleteRule: .cascade)
-    var relations: [ContactRelation]
+    @Relationship(deleteRule: .cascade, inverse: \ContactRelation.contact)
+    var relations: [ContactRelation]? = []
 
     // iOS Contacts integration
     var cnContactIdentifier: String?
@@ -170,6 +172,43 @@ final class Contact {
         self.groupRawValue = group.rawValue
     }
 
+    // Optional persisted relationships keep their original schema names.
+    // These accessors make nil (including partial sync) behave as an empty list.
+    var phoneNumberItems: [ContactPhoneNumber] {
+        get { phoneNumbers ?? [] }
+        set { phoneNumbers = newValue }
+    }
+
+    var emailAddressItems: [ContactEmailAddress] {
+        get { emailAddresses ?? [] }
+        set { emailAddresses = newValue }
+    }
+
+    var postalAddressItems: [ContactPostalAddress] {
+        get { postalAddresses ?? [] }
+        set { postalAddresses = newValue }
+    }
+
+    var dateItems: [ContactDate] {
+        get { dates ?? [] }
+        set { dates = newValue }
+    }
+
+    var socialProfileItems: [ContactSocialProfile] {
+        get { socialProfiles ?? [] }
+        set { socialProfiles = newValue }
+    }
+
+    var urlAddressItems: [ContactURL] {
+        get { urlAddresses ?? [] }
+        set { urlAddresses = newValue }
+    }
+
+    var relationItems: [ContactRelation] {
+        get { relations ?? [] }
+        set { relations = newValue }
+    }
+
     var displayName: String {
         let components = [namePrefix, givenName, middleName, familyName, nameSuffix]
             .compactMap { $0 }
@@ -196,9 +235,12 @@ final class Contact {
 
 @Model
 final class ContactPhoneNumber {
-    var id: UUID
-    var label: String
-    var value: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: String) {
         self.id = UUID()
@@ -217,9 +259,12 @@ final class ContactPhoneNumber {
 
 @Model
 final class ContactEmailAddress {
-    var id: UUID
-    var label: String
-    var value: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: String) {
         self.id = UUID()
@@ -234,14 +279,17 @@ final class ContactEmailAddress {
 
 @Model
 final class ContactPostalAddress {
-    var id: UUID
-    var label: String
-    var street: String
-    var city: String
-    var state: String
-    var postalCode: String
-    var country: String
-    var isoCountryCode: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var street: String = ""
+    var city: String = ""
+    var state: String = ""
+    var postalCode: String = ""
+    var country: String = ""
+    var isoCountryCode: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, street: String = "", city: String = "", state: String = "", postalCode: String = "", country: String = "", isoCountryCode: String = "") {
         self.id = UUID()
@@ -267,9 +315,12 @@ final class ContactPostalAddress {
 
 @Model
 final class ContactDate {
-    var id: UUID
-    var label: String
-    var value: Date
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: Date = Date()
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: Date) {
         self.id = UUID()
@@ -283,11 +334,14 @@ final class ContactDate {
 
 @Model
 final class ContactSocialProfile {
-    var id: UUID
-    var label: String
-    var service: String
-    var username: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var service: String = ""
+    var username: String = ""
     var url: String?
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, service: String, username: String, url: String? = nil) {
         self.id = UUID()
@@ -306,9 +360,12 @@ final class ContactSocialProfile {
 
 @Model
 final class ContactURL {
-    var id: UUID
-    var label: String
-    var value: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var value: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, value: String) {
         self.id = UUID()
@@ -323,9 +380,12 @@ final class ContactURL {
 
 @Model
 final class ContactRelation {
-    var id: UUID
-    var label: String
-    var name: String
+    var id: UUID = UUID()
+    var label: String = ""
+    var name: String = ""
+
+    /// Inverse relationship (required for CloudKit mirroring)
+    var contact: Contact?
 
     init(label: String, name: String) {
         self.id = UUID()
@@ -374,19 +434,19 @@ extension Contact {
         }
 
         // Phone numbers
-        for phone in phoneNumbers {
+        for phone in phoneNumberItems {
             let type = phone.label.uppercased().replacingOccurrences(of: " ", with: "")
             vcard += "TEL;TYPE=\(type):\(phone.value)\n"
         }
 
         // Email addresses
-        for email in emailAddresses {
+        for email in emailAddressItems {
             let type = email.label.uppercased()
             vcard += "EMAIL;TYPE=\(type):\(email.value)\n"
         }
 
         // Postal addresses
-        for address in postalAddresses {
+        for address in postalAddressItems {
             let type = address.label.uppercased()
             vcard += "ADR;TYPE=\(type):;;\(address.street);\(address.city);\(address.state);\(address.postalCode);\(address.country)\n"
         }
@@ -397,12 +457,12 @@ extension Contact {
         }
 
         // URLs
-        for url in urlAddresses {
+        for url in urlAddressItems {
             vcard += "URL:\(url.value)\n"
         }
 
         // Social profiles
-        for profile in socialProfiles {
+        for profile in socialProfileItems {
             if let url = profile.url {
                 vcard += "X-SOCIALPROFILE;TYPE=\(profile.service):\(url)\n"
             }
@@ -454,10 +514,10 @@ extension Contact {
                 contact.jobTitle = value
             } else if key.hasPrefix("TEL") {
                 let label = extractLabel(from: key) ?? "other"
-                contact.phoneNumbers.append(ContactPhoneNumber(label: label, value: value))
+                contact.phoneNumberItems.append(ContactPhoneNumber(label: label, value: value))
             } else if key.hasPrefix("EMAIL") {
                 let label = extractLabel(from: key) ?? "other"
-                contact.emailAddresses.append(ContactEmailAddress(label: label, value: value))
+                contact.emailAddressItems.append(ContactEmailAddress(label: label, value: value))
             } else if key.hasPrefix("BDAY") {
                 contact.birthday = DateFormatterCache.isoDate.date(from: value)
             } else if key.hasPrefix("NOTE") {

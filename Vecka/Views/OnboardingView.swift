@@ -41,9 +41,9 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "arrow.triangle.2.circlepath",
             iconColor: JohoColors.purple,
-            title: "Sync Everywhere",
+            title: ReleaseFeatures.cloudSyncEnabled ? "Sync Everywhere" : "Keep Your Planner Safe",
             subtitle: "Your data, your devices",
-            description: "iCloud sync keeps your notes, expenses, and contacts updated across all your Apple devices automatically."
+            description: ReleaseFeatures.cloudSyncEnabled ? "iCloud sync keeps your notes, expenses, and contacts updated across your Apple devices." : "Your planner is saved on this device. Use Backup & Recovery in Settings to keep a copy of your entries, contacts and photos."
         )
     ]
 

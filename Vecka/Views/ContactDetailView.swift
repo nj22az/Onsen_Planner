@@ -17,6 +17,7 @@ import PhotosUI
 // MARK: - 情報デザイン Contact Detail View
 
 struct ContactDetailView: View {
+    @State private var saveError: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
@@ -97,6 +98,7 @@ struct ContactDetailView: View {
         }
         .background(isEditMode ? colors.surface : Color.clear)
         .johoBackground()
+        .plannerSaveError($saveError)
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingQRCard) {
             VStack(spacing: 0) {
@@ -140,14 +142,14 @@ struct ContactDetailView: View {
         editFirstName = contact.givenName
         editLastName = contact.familyName
         editCompany = contact.organizationName ?? ""
-        editPhone = contact.phoneNumbers.first?.value ?? ""
-        editEmail = contact.emailAddresses.first?.value ?? ""
+        editPhone = contact.phoneNumberItems.first?.value ?? ""
+        editEmail = contact.emailAddressItems.first?.value ?? ""
         editNotes = contact.note ?? ""
         editImageData = contact.imageData
         editSymbol = contact.symbolName ?? IconCatalog.person
 
         // Address
-        let firstAddress = contact.postalAddresses.first
+        let firstAddress = contact.postalAddressItems.first
         editStreet = firstAddress?.street ?? ""
         editCity = firstAddress?.city ?? ""
         editPostalCode = firstAddress?.postalCode ?? ""
@@ -174,13 +176,13 @@ struct ContactDetailView: View {
 
     @ViewBuilder
     private var editModeContent: some View {
-        if !contact.phoneNumbers.isEmpty || isEditMode {
+        if !contact.phoneNumberItems.isEmpty || isEditMode {
             phoneSection
         }
-        if !contact.emailAddresses.isEmpty || isEditMode {
+        if !contact.emailAddressItems.isEmpty || isEditMode {
             emailSection
         }
-        if !contact.postalAddresses.isEmpty || isEditMode {
+        if !contact.postalAddressItems.isEmpty || isEditMode {
             addressSection
         }
         birthdaySection
@@ -192,9 +194,9 @@ struct ContactDetailView: View {
 
     @ViewBuilder
     private var viewModeContent: some View {
-        let hasPhone = !contact.phoneNumbers.isEmpty
-        let hasEmail = !contact.emailAddresses.isEmpty
-        let hasAddress = !contact.postalAddresses.isEmpty
+        let hasPhone = !contact.phoneNumberItems.isEmpty
+        let hasEmail = !contact.emailAddressItems.isEmpty
+        let hasAddress = !contact.postalAddressItems.isEmpty
         let hasBirthday = contact.birthday != nil
         let hasNotes = contact.note?.isEmpty == false
 
@@ -314,7 +316,7 @@ struct ContactDetailView: View {
 
                     // Contact info hints row
                     HStack(spacing: JohoDimensions.spacingLG) {
-                        if let phone = contact.phoneNumbers.first {
+                        if let phone = contact.phoneNumberItems.first {
                             HStack(spacing: 4) {
                                 Image(systemName: IconCatalog.phone)
                                     .font(JohoFont.labelBold)
@@ -325,7 +327,7 @@ struct ContactDetailView: View {
                             }
                         }
 
-                        if let email = contact.emailAddresses.first {
+                        if let email = contact.emailAddressItems.first {
                             HStack(spacing: 4) {
                                 Image(systemName: IconCatalog.envelope)
                                     .font(JohoFont.labelBold)
@@ -353,7 +355,7 @@ struct ContactDetailView: View {
             // 情報デザイン: LINE-style action buttons row (circular icons + labels)
             HStack(spacing: 0) {
                 // Message button (cyan)
-                if let phone = contact.phoneNumbers.first {
+                if let phone = contact.phoneNumberItems.first {
                     profileActionButton(
                         icon: "message.fill",
                         label: "MESSAGE",
@@ -366,7 +368,7 @@ struct ContactDetailView: View {
                 }
 
                 // Call button (green)
-                if let phone = contact.phoneNumbers.first {
+                if let phone = contact.phoneNumberItems.first {
                     profileActionButton(
                         icon: "phone.fill",
                         label: "CALL",
@@ -379,7 +381,7 @@ struct ContactDetailView: View {
                 }
 
                 // Video button (purple) - FaceTime
-                if let phone = contact.phoneNumbers.first {
+                if let phone = contact.phoneNumberItems.first {
                     profileActionButton(
                         icon: "video.fill",
                         label: "VIDEO",
@@ -392,7 +394,7 @@ struct ContactDetailView: View {
                 }
 
                 // Email button (warm brown accent)
-                if let email = contact.emailAddresses.first {
+                if let email = contact.emailAddressItems.first {
                     profileActionButton(
                         icon: "envelope.fill",
                         label: "EMAIL",
@@ -462,7 +464,7 @@ struct ContactDetailView: View {
         } else {
             detailSection(title: "PHONE", icon: "phone.fill", iconColor: JohoColors.green) {
                 VStack(spacing: 0) {
-                    ForEach(Array(contact.phoneNumbers.enumerated()), id: \.element.id) { index, phone in
+                    ForEach(Array(contact.phoneNumberItems.enumerated()), id: \.element.id) { index, phone in
                         if index > 0 {
                             Rectangle().fill(colors.border.opacity(JohoDimensions.opacityMedium)).frame(height: 1)
                         }
@@ -499,7 +501,7 @@ struct ContactDetailView: View {
         } else {
             detailSection(title: "EMAIL", icon: "envelope.fill", iconColor: accentColor) {
                 VStack(spacing: 0) {
-                    ForEach(Array(contact.emailAddresses.enumerated()), id: \.element.id) { index, email in
+                    ForEach(Array(contact.emailAddressItems.enumerated()), id: \.element.id) { index, email in
                         if index > 0 {
                             Rectangle().fill(colors.border.opacity(JohoDimensions.opacityMedium)).frame(height: 1)
                         }
@@ -554,7 +556,7 @@ struct ContactDetailView: View {
         } else {
             detailSection(title: "ADDRESS", icon: "mappin", iconColor: JohoColors.cyan) {
                 VStack(spacing: 0) {
-                    ForEach(Array(contact.postalAddresses.enumerated()), id: \.element.id) { index, address in
+                    ForEach(Array(contact.postalAddressItems.enumerated()), id: \.element.id) { index, address in
                         if index > 0 {
                             Rectangle().fill(colors.border.opacity(JohoDimensions.opacityMedium)).frame(height: 1)
                         }
@@ -1039,7 +1041,7 @@ struct ContactDetailView: View {
     /// Save button (only shown in edit mode)
     private var saveButton: some View {
         Button {
-            saveContact()
+            guard saveContact() else { return }
             withAnimation(.easeInOut(duration: 0.2)) {
                 isEditMode = false
             }
@@ -1059,7 +1061,7 @@ struct ContactDetailView: View {
 
     // MARK: - Save Contact
 
-    private func saveContact() {
+    private func saveContact() -> Bool {
         // Update contact with edited values
         contact.givenName = editFirstName.trimmingCharacters(in: .whitespaces)
         contact.familyName = editLastName.trimmingCharacters(in: .whitespaces)
@@ -1068,26 +1070,26 @@ struct ContactDetailView: View {
         // Phone (preserve additional entries from merges)
         let trimmedPhone = editPhone.trimmed
         if !trimmedPhone.isEmpty {
-            if contact.phoneNumbers.isEmpty {
-                contact.phoneNumbers = [ContactPhoneNumber(label: "mobile", value: trimmedPhone)]
+            if contact.phoneNumberItems.isEmpty {
+                contact.phoneNumberItems = [ContactPhoneNumber(label: "mobile", value: trimmedPhone)]
             } else {
                 // Update the first entry, keep the rest
-                contact.phoneNumbers[0] = ContactPhoneNumber(label: contact.phoneNumbers[0].label, value: trimmedPhone)
+                contact.phoneNumberItems[0] = ContactPhoneNumber(label: contact.phoneNumberItems[0].label, value: trimmedPhone)
             }
-        } else if contact.phoneNumbers.count <= 1 {
-            contact.phoneNumbers = []
+        } else if contact.phoneNumberItems.count <= 1 {
+            contact.phoneNumberItems = []
         }
 
         // Email (preserve additional entries from merges)
         let trimmedEmail = editEmail.trimmed
         if !trimmedEmail.isEmpty {
-            if contact.emailAddresses.isEmpty {
-                contact.emailAddresses = [ContactEmailAddress(label: "home", value: trimmedEmail)]
+            if contact.emailAddressItems.isEmpty {
+                contact.emailAddressItems = [ContactEmailAddress(label: "home", value: trimmedEmail)]
             } else {
-                contact.emailAddresses[0] = ContactEmailAddress(label: contact.emailAddresses[0].label, value: trimmedEmail)
+                contact.emailAddressItems[0] = ContactEmailAddress(label: contact.emailAddressItems[0].label, value: trimmedEmail)
             }
-        } else if contact.emailAddresses.count <= 1 {
-            contact.emailAddresses = []
+        } else if contact.emailAddressItems.count <= 1 {
+            contact.emailAddressItems = []
         }
 
         // Address (preserve additional entries from merges)
@@ -1095,24 +1097,24 @@ struct ContactDetailView: View {
         let trimmedCity = editCity.trimmed
         let trimmedPostalCode = editPostalCode.trimmed
         if !trimmedStreet.isEmpty || !trimmedCity.isEmpty || !trimmedPostalCode.isEmpty {
-            let label = contact.postalAddresses.first?.label ?? "home"
-            if contact.postalAddresses.isEmpty {
-                contact.postalAddresses = [ContactPostalAddress(
+            let label = contact.postalAddressItems.first?.label ?? "home"
+            if contact.postalAddressItems.isEmpty {
+                contact.postalAddressItems = [ContactPostalAddress(
                     label: label,
                     street: trimmedStreet,
                     city: trimmedCity,
                     postalCode: trimmedPostalCode
                 )]
             } else {
-                contact.postalAddresses[0] = ContactPostalAddress(
+                contact.postalAddressItems[0] = ContactPostalAddress(
                     label: label,
                     street: trimmedStreet,
                     city: trimmedCity,
                     postalCode: trimmedPostalCode
                 )
             }
-        } else if contact.postalAddresses.count <= 1 {
-            contact.postalAddresses = []
+        } else if contact.postalAddressItems.count <= 1 {
+            contact.postalAddressItems = []
         }
 
         // Birthday
@@ -1143,8 +1145,11 @@ struct ContactDetailView: View {
         do {
             try modelContext.save()
             Log.i("Contact saved successfully with image: \(editImageData != nil)")
+            return true
         } catch {
-            Log.e("Failed to save contact: \(error)")
+            modelContext.rollback()
+            saveError = error.localizedDescription
+            return false
         }
     }
 
@@ -1215,6 +1220,7 @@ enum JohoContactEditorMode {
 
 /// 情報デザイン compliant contact editor (unified for birthday and contact creation)
 struct JohoContactEditorSheet: View {
+    @State private var saveError: String?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
@@ -1281,14 +1287,14 @@ struct JohoContactEditorSheet: View {
             _firstName = State(initialValue: contact.givenName)
             _lastName = State(initialValue: contact.familyName)
             _company = State(initialValue: contact.organizationName ?? "")
-            _phone = State(initialValue: contact.phoneNumbers.first?.value ?? "")
-            _email = State(initialValue: contact.emailAddresses.first?.value ?? "")
+            _phone = State(initialValue: contact.phoneNumberItems.first?.value ?? "")
+            _email = State(initialValue: contact.emailAddressItems.first?.value ?? "")
             _notes = State(initialValue: contact.note ?? "")
             _selectedImageData = State(initialValue: contact.imageData)
             _selectedSymbol = State(initialValue: contact.symbolName ?? (mode == .birthday ? IconCatalog.birthday : IconCatalog.person))
 
             // Address - get first postal address if available
-            let firstAddress = contact.postalAddresses.first
+            let firstAddress = contact.postalAddressItems.first
             _street = State(initialValue: firstAddress?.street ?? "")
             _city = State(initialValue: firstAddress?.city ?? "")
             _postalCode = State(initialValue: firstAddress?.postalCode ?? "")
@@ -1347,8 +1353,7 @@ struct JohoContactEditorSheet: View {
 
                     // ○ Confirm
                     Button {
-                        saveContact()
-                        dismiss()
+                        if saveContact() { dismiss() }
                     } label: {
                         Text(JohoSymbols.maru)  // ○
                             .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -1639,6 +1644,7 @@ struct JohoContactEditorSheet: View {
             }
         }
         .johoBackground()
+        .plannerSaveError($saveError)
         .navigationBarHidden(true)
     }
 
@@ -1725,7 +1731,7 @@ struct JohoContactEditorSheet: View {
         return range.count
     }
 
-    private func saveContact() {
+    private func saveContact() -> Bool {
         // Create birthday date if enabled (with actual year for age calculation)
         var birthdayDate: Date? = nil
         if hasBirthday && birthdayKnown {
@@ -1769,9 +1775,9 @@ struct JohoContactEditorSheet: View {
             existingContact.givenName = firstName.trimmingCharacters(in: .whitespaces)
             existingContact.familyName = lastName.trimmingCharacters(in: .whitespaces)
             existingContact.organizationName = company.trimmingCharacters(in: .whitespaces).isEmpty ? nil : company.trimmingCharacters(in: .whitespaces)
-            existingContact.phoneNumbers = phoneNumbers
-            existingContact.emailAddresses = emailAddresses
-            existingContact.postalAddresses = postalAddresses
+            existingContact.phoneNumberItems = phoneNumbers
+            existingContact.emailAddressItems = emailAddresses
+            existingContact.postalAddressItems = postalAddresses
             existingContact.birthday = birthdayDate
             existingContact.birthdayKnown = birthdayKnown  // Save N/A status
             existingContact.note = trimmedNotes.isEmpty ? nil : trimmedNotes
@@ -1786,7 +1792,9 @@ struct JohoContactEditorSheet: View {
                 try modelContext.save()
                 Log.i("Contact saved successfully with image: \(selectedImageData != nil)")
             } catch {
-                Log.e("Failed to save contact: \(error)")
+                modelContext.rollback()
+                saveError = error.localizedDescription
+                return false
             }
         } else {
             // Create the contact
@@ -1817,11 +1825,14 @@ struct JohoContactEditorSheet: View {
             do {
                 try modelContext.save()
             } catch {
-                Log.e("Failed to save new contact: \(error)")
+                modelContext.rollback()
+                saveError = error.localizedDescription
+                return false
             }
         }
 
         HapticManager.notification(.success)
+        return true
     }
 }
 

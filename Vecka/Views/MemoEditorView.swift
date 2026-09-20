@@ -67,6 +67,7 @@ struct MemoEditorView: View {
     @State private var showDatePicker = false
     @State private var showTimePicker = false
     @State private var showEndDatePicker = false
+    @State private var saveError: String?
     @State private var showDeleteConfirm = false
 
     // 情報デザイン: Blue system UI accent (unified across all entry sheets)
@@ -195,6 +196,7 @@ struct MemoEditorView: View {
                 lightBackground: accentColor.opacity(JohoDimensions.opacityLight)
             )
         }
+        .plannerSaveError($saveError)
         .alert("Delete?", isPresented: $showDeleteConfirm) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) { deleteMemo() }
@@ -721,17 +723,27 @@ struct MemoEditorView: View {
             modelContext.insert(memo)
         }
 
-        try? modelContext.save()
-        HapticManager.notification(.success)
-        dismiss()
+        do {
+            try modelContext.save()
+            HapticManager.notification(.success)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            saveError = error.localizedDescription
+        }
     }
 
     private func deleteMemo() {
         guard let memo = existingMemo else { return }
         modelContext.delete(memo)
-        try? modelContext.save()
-        HapticManager.notification(.warning)
-        dismiss()
+        do {
+            try modelContext.save()
+            HapticManager.notification(.warning)
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            saveError = error.localizedDescription
+        }
     }
 }
 
@@ -867,8 +879,11 @@ struct JohoTimePicker: View {
     @Binding var selectedTime: Date
     let accentColor: Color
 
-    @State private var hours: Int = 0
-    @State private var minutes: Int = 0
+    // info: bare @State declarations — init always assigns from selectedTime
+    // (iOS 27's @State macro discards the init value when the declaration
+    // also has a default).
+    @State private var hours: Int
+    @State private var minutes: Int
 
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
 

@@ -49,7 +49,7 @@ struct WidgetHoliday: Identifiable {
     var displayName: String {
         // Try localization first
         if name.hasPrefix("holiday.") {
-            let localized = NSLocalizedString(name, bundle: .main, comment: "Holiday name")
+            let localized = NSLocalizedString(name, tableName: "HolidayNames", bundle: .main, comment: "Holiday name")
             if localized != name {
                 return localized
             }

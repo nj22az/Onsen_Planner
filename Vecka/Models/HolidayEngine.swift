@@ -10,48 +10,91 @@ import Foundation
 
 struct HolidayEngine {
     private let calendar = Calendar.current
-    
+
     /// Calculate the specific date for a rule in a given year
     func calculateDate(for rule: HolidayRule, year: Int) -> Date? {
-        switch rule.type {
+        calculateDate(
+            type: rule.type,
+            month: rule.month,
+            day: rule.day,
+            daysOffset: rule.daysOffset,
+            weekday: rule.weekday,
+            ordinal: rule.ordinal,
+            dayRangeStart: rule.dayRangeStart,
+            dayRangeEnd: rule.dayRangeEnd,
+            year: year
+        )
+    }
+
+    /// Calculate a date from a detached, Sendable rule snapshot.
+    /// Used by `HolidayManager.computeHolidayCache` on a background thread,
+    /// where reading SwiftData models would be a data race.
+    func calculateDate(for rule: HolidayComputationRule, year: Int) -> Date? {
+        calculateDate(
+            type: rule.type,
+            month: rule.month,
+            day: rule.day,
+            daysOffset: rule.daysOffset,
+            weekday: rule.weekday,
+            ordinal: rule.ordinal,
+            dayRangeStart: rule.dayRangeStart,
+            dayRangeEnd: rule.dayRangeEnd,
+            year: year
+        )
+    }
+
+    /// Shared implementation. All inputs are value types, so this is safe to
+    /// run on any thread.
+    private func calculateDate(
+        type: HolidayRuleType,
+        month: Int?,
+        day: Int?,
+        daysOffset: Int?,
+        weekday: Int?,
+        ordinal: Int?,
+        dayRangeStart: Int?,
+        dayRangeEnd: Int?,
+        year: Int
+    ) -> Date? {
+        switch type {
         case .fixed:
-            guard let month = rule.month, let day = rule.day else { return nil }
+            guard let month, let day else { return nil }
             return DateComponents(calendar: calendar, year: year, month: month, day: day).date
-            
+
         case .easterRelative:
-            guard let offset = rule.daysOffset else { return nil }
+            guard let offset = daysOffset else { return nil }
             let easter = easterSunday(year: year)
             return calendar.date(byAdding: .day, value: offset, to: easter)
-            
+
         case .floating:
             // e.g., Midsummer: Saturday between June 20-26
-            guard let month = rule.month,
-                  let weekday = rule.weekday,
-                  let startDay = rule.dayRangeStart,
-                  let endDay = rule.dayRangeEnd else { return nil }
-            
+            guard let month,
+                  let weekday,
+                  let startDay = dayRangeStart,
+                  let endDay = dayRangeEnd else { return nil }
+
             return findWeekday(weekday, in: year, month: month, range: startDay...endDay)
-            
+
         case .nthWeekday:
             // e.g., Mother's Day: Last Sunday in May (ordinal: -1)
             // e.g., Father's Day: 2nd Sunday in Nov (ordinal: 2)
-            guard let month = rule.month,
-                  let weekday = rule.weekday,
-                  let ordinal = rule.ordinal else { return nil }
-            
+            guard let month,
+                  let weekday,
+                  let ordinal else { return nil }
+
             return findNthWeekday(ordinal, weekday: weekday, in: year, month: month)
-            
+
         case .lunar:
             // e.g., Tet: 1st day of 1st Lunar Month
-            guard let lunarMonth = rule.month,
-                  let lunarDay = rule.day else { return nil }
-            
+            guard let lunarMonth = month,
+                  let lunarDay = day else { return nil }
+
             return calculateLunarDate(month: lunarMonth, day: lunarDay, inGregorianYear: year)
-            
+
         case .astronomical:
             // Solstices and Equinoxes
             // We use the 'month' field to identify which event (3=Spring, 6=Summer, 9=Autumn, 12=Winter)
-            guard let month = rule.month else { return nil }
+            guard let month else { return nil }
             return calculateAstronomicalDate(month: month, year: year)
         }
     }

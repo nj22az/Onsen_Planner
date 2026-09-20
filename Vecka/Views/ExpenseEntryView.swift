@@ -21,12 +21,16 @@ struct JohoExpenseEditorSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
 
-    @State private var amount: String = ""
-    @State private var currency: String = "SEK"
-    @State private var description: String = ""
-    @State private var merchant: String = ""
+    // info: bare @State declarations — initial values are assigned exclusively
+    // in init (iOS 27's @State macro discards the init value when the
+    // declaration also has a default).
+    @State private var amount: String
+    @State private var currency: String
+    @State private var description: String
+    @State private var merchant: String
+    @State private var saveError: String?
     @State private var showingIconPicker = false
-    @State private var selectedSymbol: String = "dollarsign.circle.fill"
+    @State private var selectedSymbol: String
 
     // Date selection (情報デザイン: Year, Month, Day)
     @State private var selectedYear: Int
@@ -35,9 +39,6 @@ struct JohoExpenseEditorSheet: View {
 
     /// Dynamic colors for dark mode
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
-
-    // Base Currency
-    @AppStorage("baseCurrency") private var baseCurrency = "SEK"
 
     // 情報デザイン: Expenses ALWAYS use green color scheme
     private var expenseAccentColor: Color { SpecialDayType.expense.accentColor }
@@ -80,6 +81,13 @@ struct JohoExpenseEditorSheet: View {
             _currency = State(initialValue: expense.currency ?? "SEK")
             _description = State(initialValue: expense.text)
             _merchant = State(initialValue: expense.place ?? "")
+            _selectedSymbol = State(initialValue: expense.symbolName ?? "dollarsign.circle.fill")
+        } else {
+            _amount = State(initialValue: "")
+            _currency = State(initialValue: UserDefaults.standard.string(forKey: "baseCurrency") ?? "SEK")
+            _description = State(initialValue: "")
+            _merchant = State(initialValue: "")
+            _selectedSymbol = State(initialValue: "dollarsign.circle.fill")
         }
     }
 
@@ -140,8 +148,7 @@ struct JohoExpenseEditorSheet: View {
 
                     // RIGHT: Save button (72pt)
                     Button {
-                        saveExpense()
-                        dismiss()
+                        if saveExpense() { dismiss() }
                     } label: {
                         Text("Save")
                             .font(JohoFont.bodySmallBold)
@@ -404,9 +411,7 @@ struct JohoExpenseEditorSheet: View {
         }
         .johoBackground()
         .navigationBarHidden(true)
-        .onAppear {
-            currency = baseCurrency
-        }
+        .plannerSaveError($saveError)
         .sheet(isPresented: $showingIconPicker) {
             JohoIconPickerSheet(
                 selectedSymbol: $selectedSymbol,
@@ -431,10 +436,10 @@ struct JohoExpenseEditorSheet: View {
         return range.count
     }
 
-    private func saveExpense() {
-        guard let amountValue = Double(amount.replacingOccurrences(of: ",", with: ".")) else { return }
+    private func saveExpense() -> Bool {
+        guard let amountValue = Double(amount.replacingOccurrences(of: ",", with: ".")) else { return false }
         let trimmedDesc = description.trimmed
-        guard !trimmedDesc.isEmpty else { return }
+        guard !trimmedDesc.isEmpty else { return false }
 
         if let existing = existingExpense {
             // Update existing expense
@@ -458,8 +463,11 @@ struct JohoExpenseEditorSheet: View {
         do {
             try modelContext.save()
             HapticManager.notification(.success)
+            return true
         } catch {
-            Log.w("Failed to save expense: \(error.localizedDescription)")
+            modelContext.rollback()
+            saveError = error.localizedDescription
+            return false
         }
     }
 }

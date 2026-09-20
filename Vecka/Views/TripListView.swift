@@ -11,15 +11,22 @@ import SwiftData
 struct TripListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
+    @Environment(StoreManager.self) private var storeManager
     @Query(sort: \Memo.date, order: .reverse) private var allMemos: [Memo]
 
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
 
     @State private var showAddTrip = false
+    @State private var showPaywall = false
     @State private var selectedTrip: Memo?
 
     /// Filtered trips from Memo
     private var allTrips: [Memo] { allMemos.trips }
+
+    /// Free tier: up to `ProLimits.freeTripLimit` trips; Pro is unlimited.
+    private var canAddTrip: Bool {
+        storeManager.canUseProFeatures || allTrips.count < ProLimits.freeTripLimit
+    }
 
     var body: some View {
         ScrollView {
@@ -34,7 +41,12 @@ struct TripListView: View {
                     Spacer()
 
                     Button {
-                        showAddTrip = true
+                        if canAddTrip {
+                            showAddTrip = true
+                        } else {
+                            // Free-tier limit reached — conversion moment.
+                            showPaywall = true
+                        }
                     } label: {
                         JohoActionButton(icon: "plus")
                     }
@@ -118,6 +130,9 @@ struct TripListView: View {
             NavigationStack {
                 AddTripView()
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
         }
         .sheet(item: $selectedTrip) { trip in
             NavigationStack {
@@ -403,6 +418,8 @@ struct JohoTripEditorSheet: View {
         _endDay = State(initialValue: calendar.component(.day, from: endDateDefault))
     }
 
+    @State private var saveError: String?
+
     var body: some View {
         // 情報デザイン: UNIFIED BENTO PILLBOX - entire editor is one compartmentalized box
         VStack(spacing: 0) {
@@ -460,8 +477,7 @@ struct JohoTripEditorSheet: View {
 
                     // RIGHT: Save button (72pt)
                     Button {
-                        saveTrip()
-                        dismiss()
+                        if saveTrip() { dismiss() }
                     } label: {
                         Text("Save")
                             .font(JohoFont.bodySmallBold)
@@ -732,6 +748,7 @@ struct JohoTripEditorSheet: View {
 
             Spacer()
         }
+        .plannerSaveError($saveError)
         .johoBackground()
         .navigationBarHidden(true)
     }
@@ -751,9 +768,9 @@ struct JohoTripEditorSheet: View {
         return range.count
     }
 
-    private func saveTrip() {
+    private func saveTrip() -> Bool {
         let trimmedDestination = destination.trimmed
-        guard !trimmedDestination.isEmpty else { return }
+        guard !trimmedDestination.isEmpty else { return false }
 
         // Create trip as Memo - just destination + dates, optionally notes
         let memo = Memo.trip(
@@ -768,8 +785,11 @@ struct JohoTripEditorSheet: View {
         do {
             try modelContext.save()
             HapticManager.notification(.success)
+            return true
         } catch {
-            Log.w("Failed to save trip: \(error.localizedDescription)")
+            modelContext.rollback()
+            saveError = error.localizedDescription
+            return false
         }
     }
 }

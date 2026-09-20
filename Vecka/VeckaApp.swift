@@ -13,6 +13,7 @@ import SwiftData
 struct VeckaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var navigationManager = NavigationManager()
+    @State private var storeManager = StoreManager.shared
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var showOnboarding = false
@@ -21,74 +22,20 @@ struct VeckaApp: App {
         AppearancePreference(rawValue: appearancePreferenceRaw) ?? .system
     }
 
-    /// CloudKit-enabled ModelContainer for iCloud sync across devices
-    /// Requires: iCloud capability + CloudKit container in Xcode project settings
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            // Holiday system
-            HolidayRule.self,
-            HolidayChangeLog.self,
-            CalendarRule.self,
-            // Contact system (8 models)
-            Contact.self,
-            ContactPhoneNumber.self,
-            ContactEmailAddress.self,
-            ContactPostalAddress.self,
-            ContactDate.self,
-            ContactSocialProfile.self,
-            ContactURL.self,
-            ContactRelation.self,
-            // World Clocks
-            WorldClock.self,
-            // Facts
-            QuirkyFact.self,
-            CalendarFact.self,
-            // Unified Memo model (notes, expenses, trips, countdowns)
-            Memo.self,
-        ])
-
-        // CloudKit sync disabled: SwiftData models need inverse relationships,
-        // optional attributes, and no unique constraints for CloudKit compatibility.
-        // TODO: Enable CloudKit when models are updated for iCloud sync
-        let modelConfiguration = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .none  // Disabled until models are CloudKit-compatible
-        )
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            // Fallback to local-only if CloudKit fails (e.g., no iCloud account)
-            Log.e("Primary ModelContainer failed: \(error). Falling back to local storage.")
-            let localConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            do {
-                return try ModelContainer(for: schema, configurations: [localConfig])
-            } catch {
-                // CRITICAL: Use in-memory store as LAST RESORT instead of crashing
-                // This allows the app to start even with corrupted persistent store
-                // User will lose data but can at least use the app
-                Log.e("Local ModelContainer failed: \(error). Using in-memory store as fallback.")
-                let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
-                do {
-                    return try ModelContainer(for: schema, configurations: [memoryConfig])
-                } catch {
-                    // This should never happen - in-memory stores don't have migration issues
-                    fatalError("Could not create ModelContainer even in-memory: \(error)")
-                }
-            }
-        }
-    }()
+    @State private var persistence = AppPersistence()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             Group {
-                if AppEnvironment.isUITesting {
+                if AppEnvironment.isUITesting || AppEnvironment.isUnitTesting {
                     UITestRootView()
-                } else {
+                        .environment(storeManager)
+                } else if let sharedModelContainer = persistence.container {
                     AppearanceResolver(preference: appearancePreference) { resolvedMode in
                         ContentView()
                             .environment(navigationManager)
+                            .environment(storeManager)
                             // 情報デザイン: Apply the resolved app color mode (binary).
                             .johoColorMode(resolvedMode)
                             // iOS chrome follows the user's preference. The nav-bar
@@ -99,6 +46,15 @@ struct VeckaApp: App {
                     }
                         .onOpenURL { url in
                             handleWidgetURL(url)
+                        }
+                        .task {
+                            // Entitlement checks must not wait for product/pricing servers.
+                            // New sales remain disabled until release validation is complete.
+                            await storeManager.refreshEntitlements()
+                            if ReleaseFeatures.proSalesEnabled { await storeManager.loadProducts() }
+                        }
+                        .onChange(of: scenePhase) { _, phase in
+                            if phase == .active { Task { await storeManager.refreshEntitlements() } }
                         }
                         .onAppear {
                             Log.i("App launched. System language: \(LanguageManager.shared.currentLanguageCode)")
@@ -114,10 +70,17 @@ struct VeckaApp: App {
                         .fullScreenCover(isPresented: $showOnboarding) {
                             OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
                         }
+                        .modelContainer(sharedModelContainer)
+                } else {
+                    StorageRecoveryView(persistence: persistence)
+                }
+            }
+            .task {
+                if !AppEnvironment.isUITesting && !AppEnvironment.isUnitTesting {
+                    persistence.open()
                 }
             }
         }
-        .modelContainer(sharedModelContainer)
     }
     
     
@@ -283,6 +246,13 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     /// Configures UIKit appearance with opaque backgrounds (情報デザイン: no glass/blur)
+    ///
+    /// iOS 27 note (Liquid Glass era): default system chrome is glass, but an
+    /// explicitly provided appearance like this one still wins — 情報デザイン
+    /// deliberately ships opaque, bordered chrome, and this proxy is how the
+    /// UIKit-rendered bars (rare in this SwiftUI app) stay on-brand. The
+    /// system-wide transparency slider does not override explicit
+    /// appearances, so behavior is stable across iOS 26/27 settings.
     private func configureGlassAppearance() {
         // Tab Bar: Opaque background (情報デザイン forbids blur/glass)
         let tabBarAppearance = UITabBarAppearance()

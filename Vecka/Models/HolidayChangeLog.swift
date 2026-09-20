@@ -33,21 +33,22 @@ enum HolidayChangeSource: String, Codable {
 
 @Model
 final class HolidayChangeLog {
-    @Attribute(.unique) var id: UUID
+    // CloudKit: no unique constraints; defaults on all stored properties.
+    var id: UUID = UUID()
 
-    var timestamp: Date
-    var action: HolidayChangeAction
-    var source: HolidayChangeSource
+    var timestamp: Date = Date()
+    var action: HolidayChangeAction = .modified
+    var source: HolidayChangeSource = .system
 
     // What was changed
-    var ruleId: String              // The HolidayRule.id
-    var ruleName: String            // Snapshot of name at time of change
-    var region: String              // SE, US, VN, CUSTOM
+    var ruleId: String = ""         // The HolidayRule.id
+    var ruleName: String = ""       // Snapshot of name at time of change
+    var region: String = ""         // SE, US, VN, CUSTOM
 
     // Change details (JSON for flexibility)
     var beforeJSON: String?         // State before change
     var afterJSON: String?          // State after change
-    var changeDescription: String   // Human-readable summary
+    var changeDescription: String = "" // Human-readable summary
 
     // Optional metadata
     var appVersion: String?

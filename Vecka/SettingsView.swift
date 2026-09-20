@@ -18,6 +18,7 @@ private struct IdentifiableMonth: Identifiable {
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.johoColorMode) private var colorMode
+    @Environment(StoreManager.self) private var storeManager
     @AppStorage("holidayRegions") private var holidayRegions = HolidayRegionSelection(regions: ["SE"])
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
     @AppStorage("amoledTrueBlack") private var amoledTrueBlack = false
@@ -25,6 +26,9 @@ struct SettingsView: View {
     @AppStorage("customLandingTitle") private var customLandingTitle = ""
     /// Dynamic colors based on color mode
     private var colors: JohoScheme { JohoScheme.colors(for: colorMode) }
+
+    // Vecka Pro state
+    @State private var showPaywall = false
 
     // Database statistics queries
     @Query private var holidayRules: [HolidayRule]
@@ -53,6 +57,12 @@ struct SettingsView: View {
                 settingsPageHeader
                     .padding(.horizontal, JohoDimensions.spacingLG)
                     .padding(.top, JohoDimensions.spacingSM)
+
+                // Vecka Pro Section (情報デザイン: Subscription surface)
+                proSection
+
+                BackupControls(container: modelContext.container)
+                    .padding(.horizontal, JohoDimensions.spacingLG)
 
                 // Theme Section (情報デザイン: Unified theming)
                 themeSection
@@ -107,6 +117,16 @@ struct SettingsView: View {
                     .padding(JohoDimensions.spacingMD)
                     .background(colors.inputBackground)
                     .johoBordered(borderWidth: JohoDimensions.borderThin)
+
+                    if let privacyPolicyURL = ReleaseFeatures.privacyPolicyURL {
+                        Link("Privacy Policy", destination: privacyPolicyURL)
+                            .font(JohoFont.body)
+                            .foregroundStyle(colors.primary)
+                            .padding(JohoDimensions.spacingMD)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(colors.inputBackground)
+                            .johoBordered(borderWidth: JohoDimensions.borderThin)
+                    }
 
                     // Copyright
                     VStack(alignment: .leading, spacing: 6) {
@@ -247,6 +267,89 @@ struct SettingsView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Vecka Pro Section (情報デザイン: Monetization surface)
+
+    private var proSection: some View {
+        VStack(alignment: .leading, spacing: JohoDimensions.spacingMD) {
+            // Section label
+            JohoPill(text: "VECKA PRO", style: .whiteOnBlack, size: .small)
+
+            // Status / upgrade card
+            HStack(spacing: JohoDimensions.spacingMD) {
+                Image(systemName: storeManager.isPro ? IconCatalog.checkmarkCircleFill : IconCatalog.star)
+                    .font(JohoFont.headline)
+                    .foregroundStyle(colors.primary)
+                    .johoTouchTarget()
+                    .background(JohoColors.yellow.opacity(JohoDimensions.opacityMedium))
+                    .clipShape(Squircle(cornerRadius: JohoDimensions.radiusSmall))
+                    .overlay(
+                        Squircle(cornerRadius: JohoDimensions.radiusSmall)
+                            .stroke(colors.border, lineWidth: JohoDimensions.borderThin)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(storeManager.isPro ? "Pro is active" : (storeManager.salesEnabled ? "Get Vecka Pro" : "Planner features available"))
+                        .font(JohoFont.headline)
+                        .foregroundStyle(colors.primary)
+
+                    Text(storeManager.isPro
+                         ? "Unlimited events, trips & exports"
+                         : (storeManager.salesEnabled ? "Unlimited events & trips · PDF/CSV export" : "Events, trips, exports and themes are available in this version."))
+                        .font(JohoFont.body)
+                        .foregroundStyle(colors.secondary)
+                }
+
+                Spacer()
+
+                if storeManager.salesEnabled && !storeManager.isPro {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        Text("Upgrade")
+                            .font(JohoFont.label)
+                            .foregroundStyle(colors.primaryInverted)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(colors.primary)
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(JohoDimensions.spacingMD)
+            .background(colors.surface)
+            .clipShape(Squircle(cornerRadius: JohoDimensions.radiusMedium))
+            .overlay(
+                Squircle(cornerRadius: JohoDimensions.radiusMedium)
+                    .strokeBorder(colors.border, lineWidth: JohoDimensions.borderMedium)
+            )
+
+            // Restore purchases (App Review requirement — always reachable)
+            Button {
+                Task {
+                    await storeManager.restorePurchases()
+                }
+            } label: {
+                Text("Restore purchases")
+                    .font(JohoFont.caption)
+                    .foregroundStyle(colors.secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(storeManager.purchaseInFlight)
+            .johoTouchTarget()
+            if let message = storeManager.statusMessage {
+                Text(message).font(JohoFont.bodySmall).foregroundStyle(colors.secondary)
+            }
+            if let error = storeManager.lastError {
+                Text(error).font(JohoFont.bodySmall).foregroundStyle(colors.secondary)
+            }
+        }
+        .padding(.horizontal, JohoDimensions.spacingLG)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
+    }
+
     // MARK: - Theme Section (情報デザイン: Unified Category Theming)
 
     private var themeSection: some View {
@@ -351,7 +454,7 @@ struct SettingsView: View {
             .johoBordered()
 
             // Footer
-            Text("Themes transform borders, surfaces, category colors, and UI accent. Month colors (季節の色) stay locked.")
+            Text("Themes transform borders, surfaces, category colors, and UI accent. Month colors (季節の色) stay locked. PRO-marked themes are included with Vecka Pro.")
                 .font(JohoFont.caption)
                 .foregroundStyle(colors.secondary)
                 .padding(.horizontal, JohoDimensions.spacingSM)
@@ -366,13 +469,20 @@ struct SettingsView: View {
 
     private func themePresetCard(_ theme: JohoThemePreset) -> some View {
         let isActive = CategoryColorSettings.shared.activeThemeId == theme.id
+        // Premium themes require Vecka Pro — tapping routes to the paywall instead of applying
+        let isLocked = (theme.isPremium ?? false) && !storeManager.canUseProFeatures
 
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                CategoryColorSettings.shared.applyTheme(theme)
+            if isLocked {
+                HapticManager.selection()
+                showPaywall = true
+            } else {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    CategoryColorSettings.shared.applyTheme(theme)
+                }
+                HapticManager.notification(.success)
+                WidgetCenter.shared.reloadTimelines(ofKind: "VeckaWidget")
             }
-            HapticManager.notification(.success)
-            WidgetCenter.shared.reloadTimelines(ofKind: "VeckaWidget")
         } label: {
             VStack(spacing: 6) {
                 // Icon in colored circle with checkmark overlay
@@ -387,13 +497,19 @@ struct SettingsView: View {
                             .strokeBorder(isActive ? colors.primary : colors.border, lineWidth: isActive ? 2.5 : 1.5)
                     )
                     .overlay(alignment: .bottomTrailing) {
-                        if isActive {
+                        if isActive && !isLocked {
                             Image(systemName: IconCatalog.checkmarkCircleFill)
                                 .font(JohoFont.headlineSmall)
                                 .foregroundStyle(colors.primary)
                                 .background(colors.surface)
                                 .clipShape(Circle())
                                 .offset(x: 4, y: 4)
+                        }
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        if isLocked {
+                            JohoPill(text: "PRO", style: .whiteOnBlack, size: .small)
+                                .offset(x: 6, y: -6)
                         }
                     }
 
@@ -1578,5 +1694,6 @@ struct SettingsCategoryCustomizationSheet: View {
 #Preview {
     NavigationStack {
         SettingsView()
+            .environment(StoreManager.shared)
     }
 }

@@ -6,27 +6,41 @@
 	<string>Onsen Planner</string>
 	<key>CFBundleName</key>
 	<string>Onsen Planner</string>
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-    </array>
-	    <key>UISupportedInterfaceOrientations~ipad</key>
-	    <array>
-	        <string>UIInterfaceOrientationPortrait</string>
-	        <string>UIInterfaceOrientationLandscapeLeft</string>
-	        <string>UIInterfaceOrientationLandscapeRight</string>
-	    </array>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Onsen Planner uses your location to show weather forecasts alongside your calendar events, helping you plan your week better.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Onsen Planner can show weather forecasts for your calendar days to help you plan activities.</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<key>NSContactsUsageDescription</key>
-	<string>Onsen Planner needs access to your contacts to import and sync contact information for easy management within the app.</string>
+	<string>Onsen Planner accesses contacts when you choose to import, update or export contact information.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Onsen Planner uses the camera to scan QR codes for quickly importing contact information.</string>
+	<string>Onsen Planner uses the camera when you choose to attach a photo to an entry.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Onsen Planner uses photos for contact profile pictures, letting you personalize your contacts with custom images.</string>
+	<string>Onsen Planner uses photos you select for contacts and planner entries.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Onsen Planner shows your calendar events alongside the weekly view, helping you see your schedule at a glance.</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
 	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Johansson.Vecka</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>vecka</string>
+			</array>
+		</dict>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+</dict>
 </plist>
