@@ -14,7 +14,6 @@
 //
 
 import SwiftUI
-import StoreKit
 
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
@@ -52,10 +51,13 @@ struct PaywallView: View {
         .presentationBackground(colors.canvas)
         .presentationDragIndicator(.visible)
         .task {
-            // Cheap retry if the launch-time fetch failed or was still running.
-            if !store.productsLoaded {
-                await store.loadProducts()
-            }
+            await store.refreshEntitlements()
+            if store.productState != .ready { await store.loadProducts() }
+            selectAvailableProduct()
+        }
+        .onChange(of: store.products) { _, _ in selectAvailableProduct() }
+        .onChange(of: store.isPro) { _, active in
+            if active { dismiss() }
         }
         .alert("Purchase Unavailable", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
@@ -74,7 +76,7 @@ struct PaywallView: View {
                 Image(systemName: IconCatalog.xmark)
                     .font(JohoFont.bodySmallBold)
                     .foregroundStyle(colors.primary)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 44, height: 44)
                     .background(colors.surface)
                     .clipShape(Circle())
                     .overlay(Circle().stroke(colors.border, lineWidth: 1.5))
@@ -88,7 +90,7 @@ struct PaywallView: View {
 
             Spacer()
 
-            Color.clear.frame(width: 32, height: 32)
+            Color.clear.frame(width: 44, height: 44)
         }
         .padding(.horizontal, JohoDimensions.spacingLG)
         .padding(.vertical, JohoDimensions.spacingMD)
@@ -184,10 +186,10 @@ struct PaywallView: View {
 
     @ViewBuilder
     private var productsSection: some View {
-        if !store.productsLoaded {
+        if store.productState == .loading || store.productState == .idle {
             ProgressView()
                 .frame(maxWidth: .infinity, minHeight: 120)
-        } else if store.products.isEmpty {
+        } else if store.productState == .unavailable {
             fallbackCard
         } else {
             VStack(spacing: JohoDimensions.spacingSM) {
@@ -208,7 +210,11 @@ struct PaywallView: View {
                 .foregroundStyle(colors.primary)
                 .multilineTextAlignment(.center)
 
-            Text("If you purchased before, restore below — otherwise check your connection and try again.")
+            Button("Retry loading products") { Task { await store.loadProducts() } }
+                .font(JohoFont.bodySmallBold)
+                .johoTouchTarget()
+
+            Text("Your planner data is unchanged. If you purchased before, restore below.")
                 .font(JohoFont.caption)
                 .foregroundStyle(colors.secondary)
                 .multilineTextAlignment(.center)
@@ -219,7 +225,7 @@ struct PaywallView: View {
         .johoBordered(cornerRadius: JohoDimensions.radiusLarge, borderWidth: 2)
     }
 
-    private func productButton(_ product: Product) -> some View {
+    private func productButton(_ product: ProOffering) -> some View {
         let isSelected = selectedProduct.rawValue == product.id
         let kind = VeckaProduct(rawValue: product.id)
 
@@ -235,7 +241,7 @@ struct PaywallView: View {
                             .foregroundStyle(colors.primary)
 
                         if kind == .proYearly {
-                            JohoPill(text: "BEST VALUE", style: .whiteOnBlack, size: .small)
+                            JohoPill(text: "YEARLY", style: .whiteOnBlack, size: .small)
                         }
                     }
 
@@ -253,13 +259,13 @@ struct PaywallView: View {
             }
             .padding(.horizontal, JohoDimensions.spacingMD)
             .padding(.vertical, JohoDimensions.spacingMD)
-            .background(isSelected ? JohoColors.yellow.opacity(JohoDimensions.opacityLight) : colors.surface)
+            .background(colors.surface)
             .johoBordered(cornerRadius: JohoDimensions.radiusMedium, borderWidth: isSelected ? 2 : 1.5)
         }
         .buttonStyle(.plain)
     }
 
-    private func title(for kind: VeckaProduct?, product: Product) -> String {
+    private func title(for kind: VeckaProduct?, product: ProOffering) -> String {
         switch kind {
         case .proYearly: return "YEARLY"
         case .proMonthly: return "MONTHLY"
@@ -268,44 +274,40 @@ struct PaywallView: View {
         }
     }
 
-    private func subtitle(for kind: VeckaProduct?, product: Product) -> String {
-        switch kind {
-        case .proYearly:
-            if let intro = product.subscription?.introductoryOffer {
-                return "\(subscriptionPeriodDescription(intro.period)) free trial, then \(product.displayPrice)/year"
-            }
-            return "\(product.displayPrice) per year"
-        case .proMonthly:
-            return "\(product.displayPrice) per month"
-        case .proLifetime:
-            return "One payment, Pro forever"
-        case nil:
-            return product.description
-        }
+    private func subtitle(for kind: VeckaProduct?, product: ProOffering) -> String {
+        product.detail
     }
 
-    /// StoreKit's `Product.SubscriptionPeriod` has no built-in localized
-    /// rendering — format it ourselves ("7-day", "1-month", ...).
-    private func subscriptionPeriodDescription(_ period: Product.SubscriptionPeriod) -> String {
-        let unit: String
-        switch period.unit {
-        case .day:   unit = period.value == 1 ? "day" : "days"
-        case .week:  unit = period.value == 1 ? "week" : "weeks"
-        case .month: unit = period.value == 1 ? "month" : "months"
-        case .year:  unit = period.value == 1 ? "year" : "years"
-        @unknown default: unit = "period"
+    private func selectAvailableProduct() {
+        if store.product(for: selectedProduct) == nil,
+           let first = store.products.first,
+           let kind = VeckaProduct(rawValue: first.id) {
+            selectedProduct = kind
         }
-        return "\(period.value)-\(unit)"
     }
 
     // MARK: - Footer (CTA + Restore + Legal)
 
     private var footerSection: some View {
         VStack(spacing: JohoDimensions.spacingMD) {
-            if store.productsLoaded && !store.products.isEmpty {
+            if store.salesEnabled && store.productState == .ready && !store.products.isEmpty {
                 buyButton
             }
 
+            if store.purchaseState == .pending || store.entitlementState == .unavailable || store.entitlementState == .checking {
+                Text(store.entitlementState == .checking ? "Checking purchase access…" : "Purchase access can be checked again without buying twice.")
+                    .font(JohoFont.caption)
+                Button("Check access") { Task { await store.refreshEntitlements() } }
+                    .font(JohoFont.bodySmallBold)
+                    .johoTouchTarget()
+            }
+            if let message = store.statusMessage {
+                Text(message).font(JohoFont.bodySmall)
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+            if let error = store.lastError {
+                Text(error).font(JohoFont.bodySmall)
+            }
             restoreRow
 
             legalText
@@ -346,7 +348,7 @@ struct PaywallView: View {
             .johoBordered(cornerRadius: JohoDimensions.radiusMedium, borderWidth: 2)
         }
         .buttonStyle(.plain)
-        .disabled(store.purchaseInFlight)
+        .disabled(!store.canPurchase || store.product(for: selectedProduct) == nil)
     }
 
     private var restoreRow: some View {
@@ -365,6 +367,8 @@ struct PaywallView: View {
                 .underline()
         }
         .buttonStyle(.plain)
+        .disabled(store.purchaseInFlight)
+        .johoTouchTarget()
     }
 
     /// App Review requires subscription terms on the paywall surface.
@@ -376,10 +380,10 @@ struct PaywallView: View {
                 .multilineTextAlignment(.center)
 
             HStack(spacing: JohoDimensions.spacingMD) {
-                // TODO(release): point at the hosted privacy policy before App Store submission.
-                Link("Privacy Policy", destination: URL(string: "https://example.com/vecka/privacy")!)
-
-                Text("·")
+                if let policy = ReleaseFeatures.privacyPolicyURL {
+                    Link("Privacy Policy", destination: policy)
+                    Text("·")
+                }
 
                 Link("Terms of Use", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
             }

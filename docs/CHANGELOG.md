@@ -2,6 +2,15 @@
 
 Logs all changes to documents under `docs/`. Follows JDS conventions: one heading per revision, newest first. System-level changes (registry entries in `nj22az/JDS_Documentation`) are noted but not duplicated.
 
+## Rev I — 2026-09-20
+
+**JDS-PRJ-SFW-002 Rev F: reliability and safe recovery; staged CloudKit and Pro sales.**
+
+- Documented observable holiday completion, optional contact relationships, persistent-store recovery and portable backup/restore.
+- CloudKit and paid restrictions are disabled pending explicit release gates; removed the live privacy placeholder.
+- Added `RELEASE_CHECKLIST.md` covering exact-head Mac validation, upgrades from main, fault recovery, real-device CloudKit and StoreKit tests.
+- Build instructions now use the shared scheme and available simulator; test failures are fatal. Source-level checks are not reported as a Mac build.
+
 ## Rev H — 2026-09-19
 
 **JDS-PRJ-SFW-002 Rev E + JDS-REF-SFW-002 Rev B: theme catalog batch 2 (10 more brand palettes).**

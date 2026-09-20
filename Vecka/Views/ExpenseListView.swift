@@ -48,7 +48,7 @@ struct ExpenseListView: View {
     /// PDF/CSV export is a Vecka Pro feature: run the action when entitled,
     /// otherwise present the paywall at the intent moment.
     private func attemptProExport(_ action: () -> Void) {
-        if storeManager.isPro {
+        if storeManager.canUseProFeatures {
             action()
         } else {
             showPaywall = true

@@ -25,7 +25,7 @@ struct TripListView: View {
 
     /// Free tier: up to `ProLimits.freeTripLimit` trips; Pro is unlimited.
     private var canAddTrip: Bool {
-        storeManager.isPro || allTrips.count < ProLimits.freeTripLimit
+        storeManager.canUseProFeatures || allTrips.count < ProLimits.freeTripLimit
     }
 
     var body: some View {

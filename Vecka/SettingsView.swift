@@ -61,6 +61,9 @@ struct SettingsView: View {
                 // Vecka Pro Section (情報デザイン: Subscription surface)
                 proSection
 
+                BackupControls(container: modelContext.container)
+                    .padding(.horizontal, JohoDimensions.spacingLG)
+
                 // Theme Section (情報デザイン: Unified theming)
                 themeSection
 
@@ -275,20 +278,20 @@ struct SettingsView: View {
                     )
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(storeManager.isPro ? "Pro is active" : "Get Vecka Pro")
+                    Text(storeManager.isPro ? "Pro is active" : (storeManager.salesEnabled ? "Get Vecka Pro" : "Planner features available"))
                         .font(JohoFont.headline)
                         .foregroundStyle(colors.primary)
 
                     Text(storeManager.isPro
                          ? "Unlimited events, trips & exports"
-                         : "Unlimited events & trips · PDF/CSV export")
+                         : (storeManager.salesEnabled ? "Unlimited events & trips · PDF/CSV export" : "Events, trips, exports and themes are available in this version."))
                         .font(JohoFont.body)
                         .foregroundStyle(colors.secondary)
                 }
 
                 Spacer()
 
-                if !storeManager.isPro {
+                if storeManager.salesEnabled && !storeManager.isPro {
                     Button {
                         showPaywall = true
                     } label: {
@@ -322,6 +325,14 @@ struct SettingsView: View {
                     .foregroundStyle(colors.secondary)
             }
             .buttonStyle(.plain)
+            .disabled(storeManager.purchaseInFlight)
+            .johoTouchTarget()
+            if let message = storeManager.statusMessage {
+                Text(message).font(JohoFont.bodySmall).foregroundStyle(colors.secondary)
+            }
+            if let error = storeManager.lastError {
+                Text(error).font(JohoFont.bodySmall).foregroundStyle(colors.secondary)
+            }
         }
         .padding(.horizontal, JohoDimensions.spacingLG)
         .sheet(isPresented: $showPaywall) {
@@ -449,7 +460,7 @@ struct SettingsView: View {
     private func themePresetCard(_ theme: JohoThemePreset) -> some View {
         let isActive = CategoryColorSettings.shared.activeThemeId == theme.id
         // Premium themes require Vecka Pro — tapping routes to the paywall instead of applying
-        let isLocked = (theme.isPremium ?? false) && !storeManager.isPro
+        let isLocked = (theme.isPremium ?? false) && !storeManager.canUseProFeatures
 
         return Button {
             if isLocked {

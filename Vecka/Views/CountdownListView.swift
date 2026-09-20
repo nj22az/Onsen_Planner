@@ -26,7 +26,7 @@ struct CountdownListView: View {
 
     /// Free tier: up to `ProLimits.freeEventLimit` custom events; Pro is unlimited.
     private var canAddEvent: Bool {
-        storeManager.isPro || customCountdowns.count < ProLimits.freeEventLimit
+        storeManager.canUseProFeatures || customCountdowns.count < ProLimits.freeEventLimit
     }
 
     var body: some View {
@@ -95,7 +95,7 @@ struct CountdownListView: View {
                     .font(JohoFont.displaySmall)
                     .foregroundStyle(colors.primary)
 
-                Text(storeManager.isPro
+                Text(storeManager.canUseProFeatures
                      ? "\(customCountdowns.count) event\(customCountdowns.count == 1 ? "" : "s")"
                      : "\(customCountdowns.count)/\(ProLimits.freeEventLimit) events")
                     .font(JohoFont.caption)
