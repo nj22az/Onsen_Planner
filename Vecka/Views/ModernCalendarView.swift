@@ -526,6 +526,8 @@ struct ModernCalendarView: View {
             .onChange(of: holidayRegions) { _, _ in
                 updateLunarConfig()
                 holidayManager.calculateAndCacheHolidays(context: modelContext, focusYear: selectedYear)
+            }
+            .onChange(of: holidayManager.cacheRevision) { _, _ in
                 rebuildDayDataCache()
             }
             .onChange(of: selectedDate) { _, newDate in

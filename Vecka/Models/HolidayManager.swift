@@ -122,14 +122,21 @@ class HolidayManager {
         cacheStorage.cache
     }
 
-    /// Thread-safe instance access to the holiday cache (legacy, prefer static cache)
-    nonisolated var holidayCache: [Date: [HolidayCacheItem]] {
-        Self.cacheStorage.cache
+    /// Views read this accessor so Observation tracks completed cache changes.
+    /// Background consumers can continue to use the thread-safe static cache.
+    var holidayCache: [Date: [HolidayCacheItem]] {
+        _ = cacheRevision
+        return Self.cacheStorage.cache
     }
+
+    private(set) var cacheRevision = 0
+    private(set) var isCalculating = false
+    private(set) var calculationError: String?
 
     /// MainActor-isolated setter for the cache with thread-safe write
     private func setHolidayCache(_ newValue: [Date: [HolidayCacheItem]]) {
         Self.cacheStorage.cache = newValue
+        cacheRevision &+= 1
     }
 
     private var lastFocusYear: Int?
@@ -285,7 +292,8 @@ class HolidayManager {
     /// previously relied on this method being synchronous should note the
     /// cache now updates asynchronously — view code already tolerates an
     /// empty/stale cache and redraws when it populates.
-    func calculateAndCacheHolidays(context: ModelContext, focusYear: Int? = nil) {
+    @discardableResult
+    func calculateAndCacheHolidays(context: ModelContext, focusYear: Int? = nil) -> Task<Void, Never>? {
         if let focusYear {
             lastFocusYear = focusYear
         }
@@ -305,13 +313,17 @@ class HolidayManager {
         // Every request gets its own generation; only the latest may apply.
         recalculationGeneration &+= 1
         let generation = recalculationGeneration
+        recalculationTask?.cancel()
+        recalculationTask = nil
+        calculationError = nil
 
         if !showHolidays {
             recalculationTask?.cancel()
             recalculationTask = nil
+            isCalculating = false
             setHolidayCache([:])
             Log.d("Holidays disabled in settings. Cache cleared.")
-            return
+            return nil
         }
 
         do {
@@ -335,6 +347,7 @@ class HolidayManager {
             let years = yearsToCache.sorted()
 
             recalculationTask?.cancel()
+            isCalculating = true
             let regionsForLog = regions
             recalculationTask = Task.detached(priority: .userInitiated) { [weak self] in
                 let computed = Self.computeHolidayCache(rules: rules, years: years)
@@ -342,11 +355,16 @@ class HolidayManager {
                     guard let self, generation == self.recalculationGeneration else { return }
                     self.setHolidayCache(computed.cache)
                     self.recalculationTask = nil
+                    self.isCalculating = false
                     Log.i("Engine calculated \(computed.dateCount) holiday dates for regions \(regionsForLog.joined(separator: ", ")).")
                 }
             }
+            return recalculationTask
         } catch {
+            isCalculating = false
+            calculationError = "Holidays could not be updated. Your previous calendar data has been kept."
             Log.w("Failed to fetch holiday rules: \(error.localizedDescription)")
+            return nil
         }
     }
 

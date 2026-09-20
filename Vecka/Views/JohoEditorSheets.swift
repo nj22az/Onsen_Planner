@@ -313,6 +313,7 @@ struct JohoSpecialDayEditorSheet: View {
             _selectedMonth = State(initialValue: calendar.component(.month, from: Date()))
             _selectedDay = State(initialValue: calendar.component(.day, from: Date()))
             _selectedSymbol = State(initialValue: type.defaultIcon)
+            _selectedIconColor = State(initialValue: nil)
             _selectedRegion = State(initialValue: defaultRegion)
         case .edit(let editName, let editDate, let editSymbol, let editIconColor, let editNotes, let editRegion):
             _name = State(initialValue: editName)
