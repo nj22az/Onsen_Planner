@@ -122,15 +122,15 @@ final class AppleAddOnStoreClient: AddOnStoreClient {
     }
     func verify() async -> AddOnVerification { await AddOnVerifier.current() }
     func purchase(id: String) async throws -> AddOnPurchaseResult {
-        guard let product = products[id] else { throw ProStoreError.unavailable }
+        guard let product = products[id] else { throw AddOnStoreError.unavailable }
         switch try await product.purchase() {
         case .success(let result):
-            guard case .verified(let transaction) = result else { throw ProStoreError.unverified }
+            guard case .verified(let transaction) = result else { throw AddOnStoreError.unverified }
             unfinished[transaction.id] = transaction
             return .verified
         case .pending: return .pending
         case .userCancelled: return .cancelled
-        @unknown default: throw ProStoreError.unavailable
+        @unknown default: throw AddOnStoreError.unavailable
         }
     }
     func restore() async throws { try await AppStore.sync() }
@@ -157,5 +157,12 @@ final class AppleAddOnStoreClient: AddOnStoreClient {
             }
             continuation.onTermination = { _ in listener.cancel() }
         }
+    }
+}
+
+enum AddOnStoreError: LocalizedError, Equatable {
+    case unavailable, unverified
+    var errorDescription: String? {
+        String(localized: self == .unavailable ? "week.purchase_unavailable" : "week.purchase_check")
     }
 }

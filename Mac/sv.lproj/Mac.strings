@@ -1,0 +1,6 @@
+"mac.menu_bar" = "Visa vecka i menyraden";
+"mac.widget_instructions" = "Kontrollklicka på skrivbordet och välj Redigera widgetar, eller öppna Notiscenter och välj Redigera widgetar. Sök efter Onsen Planner eller Week Number. Lägg till en standardwidget eller redigera en Widget Studio-widget om du äger tillägget.";
+"mac.planner_scope" = "Mac-versionen innehåller veckoverktyget och widgetar. Den äldre sparade planeringen finns kvar i iPhone/iPad-appen. Den flyttas eller synkroniseras inte av Mac-appen.";
+"mac.widget_preview" = "Illustrationer av tillgängliga layouter. macOS styr utseende, storlek och uppdatering av installerade widgetar.";
+"mac.open_app" = "Öppna Onsen Planner";
+"mac.quit" = "Avsluta Onsen Planner";

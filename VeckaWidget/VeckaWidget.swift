@@ -23,6 +23,7 @@ struct VeckaWidgetEntryView: View {
             VeckaMediumWidgetView(entry: entry)
         case .systemLarge:
             VeckaLargeWidgetView(entry: entry)
+        #if os(iOS)
         case .accessoryCircular:
             VStack(spacing: 0) {
                 Text("week.short").font(.caption2)
@@ -40,6 +41,7 @@ struct VeckaWidgetEntryView: View {
         case .accessoryInline:
             Text("week.widget_label \(entry.weekNumber)")
                 .widgetURL(URL(string: "vecka://week/\(entry.weekNumber)/\(entry.year)"))
+        #endif
         default:
             VeckaSmallWidgetView(entry: entry)
         }
@@ -56,9 +58,16 @@ struct VeckaWidget: Widget {
         }
         .configurationDisplayName("Week Number")
         .description("View the current ISO week number and monthly calendar.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge,
-                            .accessoryCircular, .accessoryRectangular, .accessoryInline])
+        .supportedFamilies(supportedFamilies)
     }
+    private var supportedFamilies: [WidgetFamily] {
+        #if os(macOS)
+        return [.systemSmall, .systemMedium, .systemLarge]
+        #else
+        return [.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline]
+        #endif
+    }
+
 }
 
 /// Preserve the original widget kind and installed configurations.

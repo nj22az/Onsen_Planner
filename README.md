@@ -7,6 +7,12 @@ Existing planner data remains available from Settings → Saved planner.
 The widget-first overhaul is described in [`docs/WIDGET_FIRST_V1.md`](docs/WIDGET_FIRST_V1.md), with version-one scope and pending native acceptance. The revised compact layout, independent presentation styles and optional one-time add-ons are specified in [`docs/LAYOUT_AND_FREEMIUM_PLAN.md`](docs/LAYOUT_AND_FREEMIUM_PLAN.md). Widget Studio is implemented for testing; sales remain disabled.
 The active design specification is [`DESIGN.md`](DESIGN.md); Joho documentation below describes the retained planner surfaces.
 
+## Mac companion
+
+A native macOS 14+ port is available in `OnsenMac.xcodeproj`. It provides the week utility, date lookup, Settings, menu-bar week number and desktop widgets. The existing saved planner remains iOS-only. Native compilation and signed widget acceptance are pending; see [`docs/MAC_PORT.md`](docs/MAC_PORT.md).
+
+On a Mac with Xcode, run `./script/build_and_run.sh`; run `./script/test_mac.sh` for unit and UI tests.
+
 ## Build
 
 ```bash
