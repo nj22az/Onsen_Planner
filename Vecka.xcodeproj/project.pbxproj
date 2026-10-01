@@ -77,6 +77,9 @@
 				"/Localized: Localizable.strings",
 				Core/ISOWeekCalendar.swift,
 				Core/WeekAppearance.swift,
+				Core/AddOnEntitlements.swift,
+				Core/AddOnVerification.swift,
+				Core/WeekStudioContent.swift,
 			);
 			target = B4310B082E476B6D00C32DDD /* VeckaWidgetExtension */;
 		};

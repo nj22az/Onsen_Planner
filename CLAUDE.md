@@ -2,7 +2,7 @@
 
 The default is the native widget-first utility in WeekRootView. See DESIGN.md and docs/WIDGET_FIRST_V1.md.
 Use Apple semantic type/colours and standard SwiftUI controls on this surface and all week widgets.
-Apple is the fallback; only MUJI, note and KINTO palettes are offered in native settings.
+Apple is the default. Quiet, Clear and Neutral adapt hierarchy and spacing from MUJI, note and KINTO. See DESIGN.md and docs/LAYOUT_AND_FREEMIUM_PLAN.md. New add-ons are independent of legacy Pro; both sales flags remain disabled pending native acceptance.
 Do not add mascot art, thick box outlines, onboarding gates, accounts or permissions to the week utility.
 The rules below apply to the retained Joho planner, not the native week surface.
 Preserve bundle IDs, App Group, saved data, backups and existing planner access.

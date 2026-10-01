@@ -62,3 +62,14 @@ Automatic pre-upgrade copies are local recovery checkpoints, not portable export
 The CI workflow uses the shared Vecka scheme, macOS 15 / Xcode 26.3, and an available iOS 18-or-newer simulator. Override `VECKA_DESTINATION` for a specific installed simulator. Check iOS 27 separately using the corresponding Xcode SDK/runtime before claiming iOS 27 readiness.
 
 At the initial review, GitHub's Mac job was blocked before starting by an account billing issue. A green static-check job cannot substitute for the Mac build, unit tests or device checks.
+
+## Before enabling one-time add-on sales
+
+- [ ] Build/run the compact Week screen, Widgets gallery, lookup/settings sheets and all four presentations on iPhone/iPad, including largest text and VoiceOver. Retain actual captures from the revised UI tests.
+- [ ] Run AddOnStoreTests and existing StoreRecoveryTests. Verify buying one product cannot grant another; pending/cancel/unverified/refund behaviour and catalogue failure must preserve the documented access boundaries.
+- [ ] Test Widget Studio's two layouts, four colours and date/year toggles independently on two installed widgets. Verify small/medium sizes, tinted rendering, midnight/year/DST/travel, cold launch and revoked/absent ownership fallback. The extension verifies StoreKit locally; it does not trust an App Group entitlement flag.
+- [ ] Configure the non-consumable Johansson.Vecka.addon.widgetstudio in App Store Connect; complete bank/tax/paid-agreement details and product review metadata. Check identifiers before creating products.
+- [ ] Exercise local StoreKit tests and sandbox/TestFlight purchases, interrupted/pending approvals, restore/reinstall/new-device, offline verified access, refunds and delayed transaction updates.
+- [ ] Keep legacy Pro purchase/restore compatibility. Existing Pro does not imply ownership of a new unrelated widget product. Restore legacy Pro through Saved planner.
+- [ ] Publish native screenshots, review notes, support/privacy URLs and matching privacy disclosures. English/Swedish new commercial copy is included; seven other locales currently use English fallback for this new copy.
+- [ ] Set ReleaseFeatures.addOnSalesEnabled only after the above passes. The flag is false in this draft; no new add-on can charge. Cloud and legacy Pro sales stay disabled.

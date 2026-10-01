@@ -5,6 +5,8 @@ import Foundation
 enum ReleaseFeatures {
     static let cloudSyncEnabled = false
     static let proSalesEnabled = false
+    // Enable only after Widget Studio and StoreKit/device acceptance are complete.
+    static let addOnSalesEnabled = false
 
     // Published with the application source; update when data handling changes.
     static let privacyPolicyURL = URL(string: "https://github.com/nj22az/Onsen_Planner/blob/main/docs/PRIVACY.md")

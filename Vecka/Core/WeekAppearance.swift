@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// These are palette adaptations; navigation, type and controls stay native.
+/// Independent presentation adaptations. Stored raw values preserve existing choices.
 enum WeekAppearance: String, CaseIterable, Identifiable {
     case apple, muji, note, kinto
     var id: String { rawValue }
@@ -16,11 +16,21 @@ enum WeekAppearance: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .apple: return "Apple"
-        case .muji: return "MUJI — Quiet"
-        case .note: return "note — Clear"
-        case .kinto: return "KINTO — Neutral"
+        case .muji: return "Quiet"
+        case .note: return "Clear"
+        case .kinto: return "Neutral"
         }
     }
+
+    var localizedTitle: LocalizedStringKey {
+        switch self {
+        case .apple: return "week.style_apple"
+        case .muji: return "week.style_quiet"
+        case .note: return "week.style_clear"
+        case .kinto: return "week.style_neutral"
+        }
+    }
+    var sectionSpacing: CGFloat { self == .muji ? 24 : self == .kinto ? 32 : 28 }
 
     var tint: Color {
         switch self {

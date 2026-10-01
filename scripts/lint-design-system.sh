@@ -104,7 +104,7 @@ violations_for_rule() {
   local STREAM="$STREAM"
   case "$1" in
     colorhex|colorraw|corners|fonts|weights|tintforeground)
-      STREAM="$(printf '%s\n' "$STREAM" | grep -vE '^Vecka/(Core/WeekAppearance|Views/WeekRootView)\.swift:|^VeckaWidget/(VeckaWidget|Views/(SmallWidgetView|MediumWidgetView|LargeWidgetView))\.swift:' || true)" ;;
+      STREAM="$(printf '%s\n' "$STREAM" | grep -vE '^Vecka/(Core/(WeekAppearance|WeekStudioContent)|Views/(WeekRootView|WidgetGalleryView))\.swift:|^VeckaWidget/(VeckaWidget|WeekStudioWidget|Views/(SmallWidgetView|MediumWidgetView|LargeWidgetView))\.swift:' || true)" ;;
   esac
   case "$1" in
     symbols)

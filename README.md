@@ -4,7 +4,7 @@ iOS 18+ ISO week-number utility with native Apple UI and Home/Lock Screen widget
 Week display and date lookup work offline without permissions or database access.
 Existing planner data remains available from Settings → Saved planner.
 
-The widget-first overhaul is described in [`docs/WIDGET_FIRST_V1.md`](docs/WIDGET_FIRST_V1.md), including the three optional palettes, version-one scope and pending native acceptance.
+The widget-first overhaul is described in [`docs/WIDGET_FIRST_V1.md`](docs/WIDGET_FIRST_V1.md), with version-one scope and pending native acceptance. The revised compact layout, independent presentation styles and optional one-time add-ons are specified in [`docs/LAYOUT_AND_FREEMIUM_PLAN.md`](docs/LAYOUT_AND_FREEMIUM_PLAN.md). Widget Studio is implemented for testing; sales remain disabled.
 The active design specification is [`DESIGN.md`](DESIGN.md); Joho documentation below describes the retained planner surfaces.
 
 ## Build

@@ -53,3 +53,28 @@ require({'VeckaTests', 'VeckaUITests'} <= tests, 'Scheme must run unit and real 
 require('-only-testing:VeckaUITests' in read('build.sh'), 'Build script omits UI acceptance')
 require('UI Test Mode' not in read('Vecka/VeckaApp.swift'), 'Tests must exercise the actual UI')
 print(f'Widget core structural checks passed; {len(expected)} utility keys in 9 locales. Native execution remains required.')
+
+# Revised native layout / independent add-on boundaries. Structural only.
+root_view = read('Vecka/Views/WeekRootView.swift')
+require(root_view.count('.tabItem') == 2, 'Week and Widgets must be the only main destinations')
+require('WeekMonthView' in root_view and 'WeekDayStrip' in root_view,
+        'Compact week needs day strip and month context')
+require('typeSize.isAccessibilitySize' in root_view, 'Compact layout must reflow for accessibility')
+require('pendingPlanner' in root_view and 'onDismiss:' in root_view, 'Saved planner must wait for sheet dismissal')
+store = read('Vecka/Services/AddOnStore.swift')
+require('pendingIDs.contains(product.rawValue)' in store, 'Pending purchases must prevent repeated checkout')
+require('store: UserDefaults' not in store and 'defaults.bool' not in store, 'Preferences cannot grant paid ownership')
+require('ownedIDs.contains(transaction.productID)' in store, 'Finish only the delivered product transaction')
+require('static let addOnSalesEnabled = false' in read('Vecka/Core/ReleaseFeatures.swift'),
+        'Add-on sales must stay disabled pending native acceptance')
+studio = read('VeckaWidget/WeekStudioWidget.swift')
+require('AppIntentConfiguration' in studio and 'AddOnVerifier.current()' in studio,
+        'Studio configuration must verify StoreKit independently of shared flags')
+require('VeckaWidgetEntryView(entry: VeckaWidgetEntry(date: entry.date))' in studio,
+        'Unowned Studio widget must preserve a useful free week display')
+require('StaticConfiguration(kind: kind' in families and 'VeckaWidget()' in families,
+        'Original widget configuration must remain installed-compatible')
+for source in ['AddOnEntitlements', 'AddOnVerification', 'WeekStudioContent']:
+    require(f'Core/{source}.swift,' in project, f'Missing shared widget source {source}')
+require('AddOnStoreTests' in read('VeckaTests/AddOnStoreTests.swift'), 'Add-on regressions missing')
+print('Compact layout and independent add-on structural checks passed; StoreKit/native execution remains required.')

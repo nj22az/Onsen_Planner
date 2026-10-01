@@ -69,3 +69,11 @@ After a stable v1, prioritise per-widget palette selection and a year overview i
 ## Evidence for this change
 
 Linux source validation is recorded in the pull request. Xcode compilation, XCTest/UI execution, signed archive, device layout, widget rollover and old-store upgrade acceptance are pending. English/Swedish/Vietnamese utility strings are supplied; the other six existing locales use English fallback for new utility copy.
+
+## Revised commercial and layout direction
+
+The later user request supersedes this document's palette-only layout and
+monetisation deferral. See [LAYOUT_AND_FREEMIUM_PLAN.md](LAYOUT_AND_FREEMIUM_PLAN.md)
+for a free complete week utility, one tested non-consumable widget pack at launch,
+and explicit purchase/device release gates. This is a proposal; sales remain
+disabled and current native acceptance is still pending.

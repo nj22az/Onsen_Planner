@@ -14,6 +14,7 @@ struct VeckaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var navigationManager = NavigationManager()
     @State private var storeManager = StoreManager.shared
+    @State private var addOnStore = AddOnStore()
     @State private var persistence = AppPersistence()
 
     var body: some Scene {
@@ -21,6 +22,7 @@ struct VeckaApp: App {
             WeekRootView(persistence: persistence)
                 .environment(navigationManager)
                 .environment(storeManager)
+                .environment(addOnStore)
                 .onOpenURL { handleWidgetURL($0) }
         }
     }

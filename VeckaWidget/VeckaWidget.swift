@@ -47,7 +47,6 @@ struct VeckaWidgetEntryView: View {
 }
 
 // MARK: - Widget Configuration
-@main
 struct VeckaWidget: Widget {
     let kind: String = "VeckaWidget"
 
@@ -59,5 +58,14 @@ struct VeckaWidget: Widget {
         .description("View the current ISO week number and monthly calendar.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge,
                             .accessoryCircular, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+/// Preserve the original widget kind and installed configurations.
+@main
+struct VeckaWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        VeckaWidget()
+        WeekStudioWidget()
     }
 }
