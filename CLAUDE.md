@@ -1,3 +1,13 @@
+## Active product direction — 1 October 2026
+
+The default is the native widget-first utility in WeekRootView. See DESIGN.md and docs/WIDGET_FIRST_V1.md.
+Use Apple semantic type/colours and standard SwiftUI controls on this surface and all week widgets.
+Apple is the fallback; only MUJI, note and KINTO palettes are offered in native settings.
+Do not add mascot art, thick box outlines, onboarding gates, accounts or permissions to the week utility.
+The rules below apply to the retained Joho planner, not the native week surface.
+Preserve bundle IDs, App Group, saved data, backups and existing planner access.
+Native builds/tests and device acceptance must pass before release; source checks do not prove them.
+
 # Onsen Planner (Vecka)
 
 iOS 18+ week number app with semantic color coding.

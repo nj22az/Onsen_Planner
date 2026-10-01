@@ -20,6 +20,7 @@ jobs:
       - run: ./scripts/lint-design-system.sh
       - run: ./scripts/validate-docs.sh --quiet
       - run: python3 scripts/validate-release-config.py
+      - run: python3 scripts/validate-widget-core.py
   build-and-test:
     name: Build and Test iOS App
     runs-on: macos-15

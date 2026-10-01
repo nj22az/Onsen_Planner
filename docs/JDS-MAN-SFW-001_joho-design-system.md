@@ -1,5 +1,7 @@
 # JDS-MAN-SFW-001 — Joho Design System Manual
 
+> Scope update, 1 October 2026: this manual governs the retained planner. The native default week utility, shared palette tokens and all week widgets are governed by ../DESIGN.md. Joho font/colour/corner ratchets do not apply to those explicitly named native surfaces; symbol/gradient/material checks remain in place.
+
 **Doc No:** JDS-MAN-SFW-001
 **Rev:** D
 **Status:** CURRENT

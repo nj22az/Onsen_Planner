@@ -1,5 +1,7 @@
 # JDS-PRJ-SFW-002 — Onsen Planner
 
+> Product update, 1 October 2026: the default is now a native, database-independent ISO week utility with Home/Lock Screen widgets. See WIDGET_FIRST_V1.md. Inventory below describes the retained planner; its appearance is not the default UI. Native acceptance remains pending.
+
 **Doc No:** JDS-PRJ-SFW-002
 **Rev:** F
 **Status:** CURRENT

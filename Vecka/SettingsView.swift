@@ -86,17 +86,11 @@ struct SettingsView: View {
                     // Section label
                     JohoPill(text: "ABOUT", style: .whiteOnBlack, size: .small)
 
-                    // App info card (情報デザイン: Mascot as app icon)
+                    // Existing planner information
                     HStack(spacing: JohoDimensions.spacingMD) {
-                        // JohoMascot as app icon (情報デザイン: The face of the app)
-                        JohoMascot(
-                            mood: .happy,
-                            size: 64,
-                            borderWidth: 2,
-                            showBob: false,
-                            showBlink: true,
-                            autoOnsen: false
-                        )
+                        Image(systemName: IconCatalog.calendar)
+                            .font(JohoFont.displaySmall)
+                            .foregroundStyle(colors.primary)
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Onsen Planner")

@@ -3,222 +3,59 @@
 //  Vecka
 //
 //  Production-grade ISO 8601 week number calculator
-//  Thread-safe, cached, optimized for performance
+//  Stateless ISO calculations shared with the widget
 //
 
 import Foundation
 
-/// Thread-safe, high-performance ISO 8601 week number calculator
+/// Compatibility facade for the database-independent ISO date engine.
 final class WeekCalculator {
-
-    // MARK: - Singleton
     static let shared = WeekCalculator()
+    private init() {}
 
-    // MARK: - Properties
-    private var calendar: Calendar
-    // Thread-safe cache using lock
-    private let cacheLock = NSLock()
-    private var _cache: [String: WeekInfo] = [:]
-
-    private var cache: [String: WeekInfo] {
-        get {
-            cacheLock.lock()
-            defer { cacheLock.unlock() }
-            return _cache
-        }
-        set {
-            cacheLock.lock()
-            defer { cacheLock.unlock() }
-            _cache = newValue
-        }
-    }
-
-    // MARK: - Initialization
-    private init() {
-        // Default fallback (ISO 8601 / Sweden)
-        var cal = Calendar(identifier: .gregorian)
-        cal.firstWeekday = 2 // Monday
-        cal.minimumDaysInFirstWeek = 4 // ISO 8601
-        cal.locale = Locale(identifier: "sv_SE")
-        cal.timeZone = TimeZone.autoupdatingCurrent
-        self.calendar = cal
-    }
-    
-    /// Configure the calculator with a rule from the database
+    /// Kept for saved-planner compatibility. Week numbers always use ISO 8601.
     @MainActor
     func configure(with rule: CalendarRule) {
-        // Parse calendar identifier from rule
-        let identifier: Calendar.Identifier
-        if let parsed = Calendar.Identifier.from(rule.identifier) {
-            identifier = parsed
-        } else {
-            identifier = .gregorian  // Fallback to gregorian
-        }
-
-        var cal = Calendar(identifier: identifier)
-        cal.firstWeekday = rule.firstWeekday
-        cal.minimumDaysInFirstWeek = rule.minimumDaysInFirstWeek
-        cal.locale = Locale(identifier: rule.localeIdentifier)
-        cal.timeZone = TimeZone.autoupdatingCurrent
-
-        // Update the internal calendar
-        self.calendar = cal
-
-        // Clear cache as rules changed (thread-safe via setter)
-        cache = [:]
-        Log.i("WeekCalculator configured with rule: \(rule.id) (FirstDay: \(rule.firstWeekday), MinDays: \(rule.minimumDaysInFirstWeek))")
+        Log.i("ISO week numbering is fixed; saved calendar rule retained: \(rule.id)")
     }
 
-    // MARK: - Public API
+    func currentWeekNumber() -> Int { weekNumber(for: Date()) }
+    func currentYear() -> Int { ISOWeekCalendar.week(for: Date()).year }
+    func weekNumber(for date: Date) -> Int { ISOWeekCalendar.week(for: date).number }
 
-    /// Get the current ISO 8601 week number
-    func currentWeekNumber() -> Int {
-        weekNumber(for: Date())
+    /// Time-dependent fields are recalculated, never cached across midnight.
+    func weekInfo(for date: Date = Date(), now: Date = Date()) -> WeekInfo {
+        let week = ISOWeekCalendar.week(for: date)
+        let current = ISOWeekCalendar.week(for: now)
+        let isCurrent = week.number == current.number && week.year == current.year
+        let calendar = ISOWeekCalendar.calendar()
+        let daysRemaining = isCurrent
+            ? calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: week.end).day ?? 0 : 0
+        let range = week.start.formatted(.dateTime.month(.abbreviated).day().year())
+            + " – " + week.end.formatted(.dateTime.month(.abbreviated).day().year())
+        return WeekInfo(weekNumber: week.number, year: week.year,
+                        startDate: week.start, endDate: week.end, dateRange: range,
+                        daysRemaining: max(0, daysRemaining), isCurrentWeek: isCurrent)
     }
 
-    /// Get the current year for week numbering
-    func currentYear() -> Int {
-        calendar.component(.yearForWeekOfYear, from: Date())
-    }
-
-    /// Get the ISO 8601 week number for a specific date
-    func weekNumber(for date: Date) -> Int {
-        calendar.component(.weekOfYear, from: date)
-    }
-
-    /// Get comprehensive week information for a date
-    func weekInfo(for date: Date = Date()) -> WeekInfo {
-        // Check cache first
-        let key = cacheKey(for: date)
-        if let cached = cache[key] {
-            return cached
-        }
-
-        // Calculate
-        let info = calculateWeekInfo(for: date)
-
-        // Cache result
-        cache[key] = info
-
-        return info
-    }
-
-    /// Get all dates in a specific week
     func dates(in weekNumber: Int, year: Int) -> [Date] {
-        var components = DateComponents()
-        components.yearForWeekOfYear = year
-        components.weekOfYear = weekNumber
-        components.weekday = 2 // Monday (ISO 8601 starts on Monday)
-
-        guard let startDate = calendar.date(from: components) else {
-            return []
-        }
-
-        return (0..<7).compactMap { dayOffset in
-            calendar.date(byAdding: .day, value: dayOffset, to: startDate)
-        }
+        guard let date = ISOWeekCalendar.date(week: weekNumber, year: year) else { return [] }
+        return ISOWeekCalendar.week(for: date).days
     }
-
-    /// Check if a date is in the current week
     func isInCurrentWeek(_ date: Date) -> Bool {
-        calendar.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+        let week = ISOWeekCalendar.week(for: date)
+        let current = ISOWeekCalendar.week(for: Date())
+        return week.number == current.number && week.year == current.year
     }
-
-    /// Get the start date of a week
-    func startOfWeek(for date: Date) -> Date {
-        var components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        components.weekday = 2 // Monday
-        return calendar.date(from: components) ?? date
-    }
-
-    /// Get the end date of a week
-    func endOfWeek(for date: Date) -> Date {
-        let start = startOfWeek(for: date)
-        return calendar.date(byAdding: .day, value: 6, to: start) ?? date
-    }
-
-    /// Calculate progress through the current week (0.0 to 1.0)
+    func startOfWeek(for date: Date) -> Date { ISOWeekCalendar.week(for: date).start }
+    func endOfWeek(for date: Date) -> Date { ISOWeekCalendar.week(for: date).end }
     func weekProgress(for date: Date = Date()) -> Double {
-        let weekday = calendar.component(.weekday, from: date)
-        let hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-
-        // Convert weekday to 0-6 (Monday = 0, Sunday = 6)
-        let dayIndex = (weekday == 1) ? 6 : weekday - 2
-
-        // Calculate total minutes elapsed
-        let minutesElapsed = (dayIndex * 24 * 60) + (hour * 60) + minute
-        let totalMinutesInWeek = 7 * 24 * 60
-
-        return Double(minutesElapsed) / Double(totalMinutesInWeek)
+        let calendar = ISOWeekCalendar.calendar()
+        let index = (calendar.component(.weekday, from: date) + 5) % 7
+        let minutes = index * 1440 + calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
+        return Double(minutes) / Double(7 * 1440)
     }
-
-    /// Get the number of weeks in a year
-    /// Get the number of weeks in a year (Database Driven)
-    func weeksInYear(_ year: Int) -> Int {
-        // We pick a date late in the year to ensure we capture the full range
-        // Dec 28th is always in the last week or close to it in ISO, but let's use a safer generic approach.
-        // Actually, asking for the range of weeks in the yearForWeekOfYear is the most robust method
-        // that respects the 'minimumDaysInFirstWeek' rule from the DB.
-        
-        let components = DateComponents(year: year, month: 1, day: 1)
-        guard let date = calendar.date(from: components) else { return 52 }
-        
-        if let range = calendar.range(of: .weekOfYear, in: .yearForWeekOfYear, for: date) {
-            return range.count
-        }
-        return 52
-    }
-
-    // MARK: - Private Methods
-
-    private func calculateWeekInfo(for date: Date) -> WeekInfo {
-        let weekNumber = calendar.component(.weekOfYear, from: date)
-        let year = calendar.component(.yearForWeekOfYear, from: date)
-
-        let startDate = startOfWeek(for: date)
-        let endDate = endOfWeek(for: date)
-
-        let startString = DateFormatterCache.weekRange.string(from: startDate)
-        let endString = DateFormatterCache.weekRange.string(from: endDate)
-
-        let startYear = calendar.component(.year, from: startDate)
-        let endYear = calendar.component(.year, from: endDate)
-
-        let dateRange: String
-        if startYear == endYear {
-            dateRange = "\(startString) – \(endString), \(startYear)"
-        } else {
-            dateRange = "\(startString), \(startYear) – \(endString), \(endYear)"
-        }
-
-        // Calculate days remaining
-        let now = Date()
-        let daysRemaining: Int
-        if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
-            let weekday = calendar.component(.weekday, from: now)
-            // Convert to 0-6 (Monday = 0)
-            let dayIndex = (weekday == 1) ? 6 : weekday - 2
-            daysRemaining = 6 - dayIndex
-        } else {
-            daysRemaining = 0
-        }
-
-        return WeekInfo(
-            weekNumber: weekNumber,
-            year: year,
-            startDate: startDate,
-            endDate: endDate,
-            dateRange: dateRange,
-            daysRemaining: daysRemaining,
-            isCurrentWeek: calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear)
-        )
-    }
-
-    private func cacheKey(for date: Date) -> String {
-        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
-        return "\(components.yearForWeekOfYear ?? 0)-\(components.weekOfYear ?? 0)"
-    }
+    func weeksInYear(_ year: Int) -> Int { ISOWeekCalendar.weeks(in: year) }
 }
 
 // MARK: - WeekInfo Model

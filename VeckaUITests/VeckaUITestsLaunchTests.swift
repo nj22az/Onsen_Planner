@@ -23,10 +23,7 @@ final class VeckaUITestsLaunchTests: XCTestCase {
         app.launchArguments += ["-ui-testing", "-disable-animations"]
         app.launch()
 
-        XCTAssertTrue(app.otherElements["ui-test-root"].waitForExistence(timeout: 5))
-
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
+        XCTAssertTrue(app.descendants(matching: .any)["week-summary"].firstMatch.waitForExistence(timeout: 10))
 
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"

@@ -339,3 +339,37 @@
 "navigation.menu" = "Menu";
 "navigation.holidays_section" = "Ngày lễ & Sự kiện";
 "navigation.features" = "Tính năng";
+
+// Widget-first native utility (English fallback outside en/sv/vi).
+"week.title" = "Tuần này";
+"week.tab" = "Tuần";
+"week.number_label" = "Số tuần";
+"week.previous" = "Trước";
+"week.next" = "Sau";
+"week.today" = "Hôm nay";
+"week.lookup" = "Tra cứu ngày";
+"week.choose_date" = "Chọn ngày";
+"week.days" = "Thứ Hai đến Chủ nhật";
+"week.iso_year %@" = "Năm tuần ISO %@";
+"week.short" = "Tuần";
+"week.widget_label %lld" = "Tuần %lld";
+"week.appearance" = "Giao diện";
+"week.theme" = "Chủ đề";
+"week.theme_footer" = "Apple là mặc định. Các bảng màu tùy chọn giữ nguyên điều khiển hệ thống và màu sắc dễ đọc.";
+"week.widgets" = "Tiện ích";
+"week.add_widget" = "Thêm tiện ích";
+"week.refresh_widgets" = "Làm mới tiện ích";
+"week.saved_planner" = "Sổ kế hoạch đã lưu";
+"week.open_planner" = "Mở sổ kế hoạch đã lưu";
+"week.planner_footer" = "Các mục và bản sao lưu cũ vẫn còn. Số tuần vẫn hoạt động ngay cả khi không mở được sổ kế hoạch.";
+"week.about" = "Giới thiệu";
+"week.iso_explanation" = "Tuần ISO bắt đầu vào thứ Hai. Tuần 1 chứa ngày 4 tháng 1. Năm tuần ISO có thể khác năm dương lịch vào dịp năm mới.";
+"week.offline" = "Số tuần hoạt động ngoại tuyến, không cần tài khoản hoặc quyền truy cập.";
+"week.privacy" = "Chính sách quyền riêng tư";
+"week.done" = "Xong";
+"week.settings" = "Cài đặt";
+"week.home_screen" = "Màn hình chính";
+"week.home_instructions" = "Nhấn giữ màn hình chính, mở thư viện tiện ích và tìm Onsen Planner hoặc Week Number. Chọn kích thước rồi thêm tiện ích.";
+"week.lock_screen" = "Màn hình khóa";
+"week.lock_instructions" = "Nhấn giữ màn hình khóa, chọn Tùy chỉnh và thêm Week Number vào vùng tiện ích. Tính khả dụng tùy thuộc vào thiết bị.";
+"week.widget_footer" = "Tiện ích chuẩn bị các mục cho nửa đêm địa phương trong tương lai. iOS quyết định thời điểm làm mới. Sau khi đi xa hoặc đổi múi giờ, hãy mở ứng dụng để yêu cầu lịch mới.";

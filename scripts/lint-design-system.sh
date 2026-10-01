@@ -99,6 +99,13 @@ NAMED_COLORS='red|blue|green|yellow|orange|purple|pink|gray|grey|black|white|pri
 
 # Emit "file:line:content" violation lines for a given rule id.
 violations_for_rule() {
+  # The widget-first surfaces use Apple semantic type/colours, not Joho tokens.
+  # Strict symbol/gradient/material rules still apply to the entire source tree.
+  local STREAM="$STREAM"
+  case "$1" in
+    colorhex|colorraw|corners|fonts|weights|tintforeground)
+      STREAM="$(printf '%s\n' "$STREAM" | grep -vE '^Vecka/(Core/WeekAppearance|Views/WeekRootView)\.swift:|^VeckaWidget/(VeckaWidget|Views/(SmallWidgetView|MediumWidgetView|LargeWidgetView))\.swift:' || true)" ;;
+  esac
   case "$1" in
     symbols)
       printf '%s\n' "$STREAM" \

@@ -905,15 +905,15 @@ final class PerformanceBenchmarkTests: XCTestCase {
         }
     }
 
-    func testWeekCalculatorCacheEfficiency() {
+    func testRepeatedWeekInformationPerformance() {
         let calculator = WeekCalculator.shared
         let testDate = Date()
 
-        // Warm up cache
+        // Warm up Foundation formatters
         _ = calculator.weekInfo(for: testDate)
 
         measure {
-            // This should be fast due to caching
+            // Measure repeated calculation without caching time-dependent values
             for _ in 0..<10000 {
                 _ = calculator.weekInfo(for: testDate)
             }

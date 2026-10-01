@@ -1,39 +1,51 @@
-//
-//  VeckaUITests.swift
-//  VeckaUITests
-//
-//  Created by Nils Johansson on 2025-08-09.
-//
-
 import XCTest
 
 final class VeckaUITests: XCTestCase {
-
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
-        continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    private func launch() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments += ["-ui-testing", "-disable-animations"]
+        app.launchArguments = ["-ui-testing", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
-
-        XCTAssertTrue(app.otherElements["ui-test-root"].waitForExistence(timeout: 5))
+        return app
     }
 
     @MainActor
-    func testLaunchPerformance() throws {
-        throw XCTSkip("Disabled to avoid quiescence hangs; re-enable when UI tests are stable.")
+    func testActualWeekHomeAndNavigation() {
+        let app = launch()
+        XCTAssertTrue(app.navigationBars["This Week"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["UI Test Mode"].exists)
+        XCTAssertTrue(app.buttons["next-week"].exists)
+        let summary = app.descendants(matching: .any)["week-summary"].firstMatch
+        let original = summary.label
+        app.buttons["next-week"].tap()
+        XCTAssertNotEqual(summary.label, original)
+        app.buttons["previous-week"].tap()
+        XCTAssertEqual(summary.label, original)
+        app.buttons["show-today"].tap()
+        XCTAssertEqual(summary.label, original)
+    }
+
+    @MainActor
+    func testLookupAndWidgetInstructions() {
+        let app = launch()
+        app.tabBars.buttons["Date lookup"].tap()
+        XCTAssertTrue(app.navigationBars["Date lookup"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["week-date-picker"].firstMatch.exists)
+        app.tabBars.buttons["Week"].tap()
+        let add = app.buttons["Add a widget"]
+        for _ in 0..<4 where !add.isHittable { app.swipeUp() }
+        add.tap()
+        XCTAssertTrue(app.navigationBars["Add a widget"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Touch and hold")).firstMatch.exists)
+    }
+
+    @MainActor
+    func testSettingsRetainAccessToSavedPlanner() {
+        let app = launch()
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["week-theme-picker"].firstMatch.exists)
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["Open saved planner"].exists)
     }
 }

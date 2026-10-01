@@ -75,6 +75,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"/Localized: Localizable.strings",
+				Core/ISOWeekCalendar.swift,
+				Core/WeekAppearance.swift,
 			);
 			target = B4310B082E476B6D00C32DDD /* VeckaWidgetExtension */;
 		};

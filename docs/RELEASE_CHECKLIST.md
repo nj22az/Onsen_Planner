@@ -1,5 +1,7 @@
 # Onsen Planner — reliability acceptance gates
 
+> Widget-first overhaul: also complete the ordered gates in WIDGET_FIRST_V1.md. The current widget computes only ISO dates and does not read Calendar events or birthdays. The default utility does not open planner storage. Existing planner migration/backup gates still apply before publication.
+
 This checklist describes tests that must be performed; unchecked items are **not** evidence of success.
 
 ## Current build decisions

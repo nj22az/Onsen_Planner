@@ -1,8 +1,8 @@
 # Privacy Policy — Onsen Planner
 
-Effective date: 20 September 2026
+Effective date: 1 October 2026
 
-Onsen Planner is developed by Nils Johansson. This policy describes the current application, with cloud synchronisation and new Pro purchases disabled.
+Onsen Planner is developed by Nils Johansson. Its default week-number utility works offline without accounts, calendar access or opening planner storage. Existing planner features remain available separately. This policy describes the current application, with cloud synchronisation and new Pro purchases disabled.
 
 ## Planner data and storage
 
@@ -16,7 +16,7 @@ Before a database upgrade, the app keeps a local recovery copy. If opening the d
 
 - **Contacts:** When you choose to import, update or export contacts, the app reads or writes the relevant information in Apple's Contacts database. Imported records are stored locally in your planner. Contacts you export may synchronise through the accounts you have configured in iOS.
 - **Photos and camera:** Photos you select or capture for an entry are stored with your planner data. The app does not upload them to a developer-operated service.
-- **Calendars:** The widget can read authorised calendar events for display. This does not grant the developer access to your calendars.
+- **Week widgets:** The widget calculates ISO week numbers and dates locally. It does not read your Calendar events, Contacts or saved planner database.
 - **App Store:** The app uses Apple's StoreKit to check existing purchase entitlements. Apple may process account and transaction information under its own policies. The developer does not receive your payment-card details. New Pro purchases are disabled in this version.
 
 You can manage permissions in iOS Settings. Other planner functions remain available if you decline a permission.

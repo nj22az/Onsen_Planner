@@ -23,7 +23,6 @@ colorhex Vecka/Views/AddWorldClockView.swift 7
 colorhex Vecka/Views/AnalogClockView.swift 1
 colorhex Vecka/Views/EditLandingTitleView.swift 1
 colorhex Vecka/Views/JohoEditorSheets.swift 9
-colorhex Vecka/Views/KaomojiMascot.swift 1
 colorhex Vecka/Views/LandingPageView.swift 12
 colorhex VeckaWidget/SharedWorldClock.swift 12
 colorhex VeckaWidget/Theme.swift 14
@@ -42,14 +41,12 @@ colorraw Vecka/Views/NotesListView.swift 1
 colorraw Vecka/Views/ShareableDaySummary.swift 1
 colorraw Vecka/Views/SimplePDFExportView.swift 2
 colorraw Vecka/Views/SpecialDaysListView.swift 1
-colorraw Vecka/Views/UITestRootView.swift 2
 colorraw Vecka/WeekPickerSheet.swift 4
 colorraw VeckaWidget/Components/BackgroundPattern.swift 1
 colorraw VeckaWidget/Theme.swift 9
 fonts Vecka/Views/AppSidebar.swift 1
 fonts Vecka/Views/CountdownViews.swift 4
 fonts Vecka/Views/SimplePDFExportView.swift 1
-fonts Vecka/Views/UITestRootView.swift 2
 fonts Vecka/WeekPickerSheet.swift 4
 fonts VeckaWidget/Components/DayCell.swift 1
 tintforeground Vecka/Views/ContactListView.swift 1

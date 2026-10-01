@@ -372,3 +372,37 @@
 "navigation.menu" = "Meny";
 "navigation.holidays_section" = "Helgdagar och händelser";
 "navigation.features" = "Funktioner";
+
+// Widget-first native utility (English fallback outside en/sv/vi).
+"week.title" = "Denna vecka";
+"week.tab" = "Vecka";
+"week.number_label" = "Veckonummer";
+"week.previous" = "Föregående";
+"week.next" = "Nästa";
+"week.today" = "Idag";
+"week.lookup" = "Sök datum";
+"week.choose_date" = "Välj datum";
+"week.days" = "Måndag till söndag";
+"week.iso_year %@" = "ISO-veckoår %@";
+"week.short" = "V";
+"week.widget_label %lld" = "Vecka %lld";
+"week.appearance" = "Utseende";
+"week.theme" = "Tema";
+"week.theme_footer" = "Apple är standard. De valbara färgtemana behåller samma systemkontroller och läsbara systemfärger.";
+"week.widgets" = "Widgetar";
+"week.add_widget" = "Lägg till en widget";
+"week.refresh_widgets" = "Uppdatera widgetar";
+"week.saved_planner" = "Sparad planerare";
+"week.open_planner" = "Öppna sparad planerare";
+"week.planner_footer" = "Dina tidigare poster och säkerhetskopior finns kvar. Veckonummer fungerar även om planeraren inte kan öppnas.";
+"week.about" = "Om appen";
+"week.iso_explanation" = "ISO-veckor börjar på måndag. Vecka 1 innehåller den 4 januari. Veckoåret kan skilja sig från kalenderåret kring nyår.";
+"week.offline" = "Veckonummer fungerar utan internet, konto eller behörigheter.";
+"week.privacy" = "Integritetspolicy";
+"week.done" = "Klar";
+"week.settings" = "Inställningar";
+"week.home_screen" = "Hemskärm";
+"week.home_instructions" = "Tryck och håll på hemskärmen, öppna widgetgalleriet och sök efter Onsen Planner eller Week Number. Välj storlek och lägg till widgeten.";
+"week.lock_screen" = "Låsskärm";
+"week.lock_instructions" = "Tryck och håll på låsskärmen, välj Anpassa och lägg till Week Number i widgetområdet. Tillgängligheten beror på din enhet.";
+"week.widget_footer" = "Widgeten förbereder framtida uppdateringar vid lokal midnatt. iOS styr uppdateringstiden. Öppna appen efter resor eller byte av tidszon för att begära en ny tidslinje.";

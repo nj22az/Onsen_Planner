@@ -339,3 +339,37 @@
 "navigation.menu" = "เมนู";
 "navigation.holidays_section" = "วันหยุดและกิจกรรม";
 "navigation.features" = "ฟีเจอร์";
+
+// Widget-first native utility (English fallback outside en/sv/vi).
+"week.title" = "This Week";
+"week.tab" = "Week";
+"week.number_label" = "Week number";
+"week.previous" = "Previous";
+"week.next" = "Next";
+"week.today" = "Today";
+"week.lookup" = "Date lookup";
+"week.choose_date" = "Choose a date";
+"week.days" = "Monday to Sunday";
+"week.iso_year %@" = "ISO week-year %@";
+"week.short" = "Wk";
+"week.widget_label %lld" = "Week %lld";
+"week.appearance" = "Appearance";
+"week.theme" = "Theme";
+"week.theme_footer" = "Apple is the default. Optional palettes keep the same native controls and readable system colours.";
+"week.widgets" = "Widgets";
+"week.add_widget" = "Add a widget";
+"week.refresh_widgets" = "Refresh widgets";
+"week.saved_planner" = "Saved planner";
+"week.open_planner" = "Open saved planner";
+"week.planner_footer" = "Your existing entries and backups remain available. Week numbers work even if this planner cannot open.";
+"week.about" = "About";
+"week.iso_explanation" = "ISO weeks start on Monday. Week 1 contains 4 January. The ISO week-year can differ from the calendar year near New Year.";
+"week.offline" = "Week numbers work offline, with no account or permissions.";
+"week.privacy" = "Privacy policy";
+"week.done" = "Done";
+"week.settings" = "Settings";
+"week.home_screen" = "Home Screen";
+"week.home_instructions" = "Touch and hold the Home Screen, open the widget gallery, and search for Onsen Planner or Week Number. Choose a size and add it.";
+"week.lock_screen" = "Lock Screen";
+"week.lock_instructions" = "Touch and hold the Lock Screen, choose Customise, and add Week Number in the widget area. Availability depends on your device.";
+"week.widget_footer" = "The widget prepares future local-midnight entries. iOS controls refresh timing. After travel or a time-zone change, open the app to request a fresh timeline.";

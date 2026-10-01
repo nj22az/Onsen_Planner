@@ -36,6 +36,7 @@ print("platform=iOS Simulator,id=" + sorted(candidates, reverse=True)[0][3])'
 
 build_project() {
     python3 scripts/validate-release-config.py
+    python3 scripts/validate-widget-core.py
     xcodebuild build -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
         -destination 'generic/platform=iOS Simulator' -configuration "$1" \
         -derivedDataPath "$DERIVED_DATA" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
@@ -57,11 +58,12 @@ case "${1:-help}" in
         ./scripts/lint-design-system.sh
         ./scripts/validate-docs.sh --quiet
         python3 scripts/validate-release-config.py
+        python3 scripts/validate-widget-core.py
         mkdir -p "$(dirname "$RESULT_PATH")"
         xcodebuild test -project "$PROJECT_FILE" -scheme "$SCHEME_NAME" \
             -destination "$(simulator_destination)" -configuration Debug \
             -derivedDataPath "$DERIVED_DATA" -resultBundlePath "$RESULT_PATH" \
-            -parallel-testing-enabled NO -only-testing:VeckaTests \
+            -parallel-testing-enabled NO -only-testing:VeckaTests -only-testing:VeckaUITests \
             CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
         ;;
     widget-test)

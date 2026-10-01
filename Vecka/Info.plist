@@ -22,8 +22,6 @@
 	<string>Onsen Planner uses the camera when you choose to attach a photo to an entry.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Onsen Planner uses photos you select for contacts and planner entries.</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Onsen Planner shows your calendar events alongside the weekly view, helping you see your schedule at a glance.</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

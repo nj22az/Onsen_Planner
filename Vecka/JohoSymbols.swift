@@ -103,7 +103,7 @@ enum IconCatalog {
     static let hammer = "hammer.fill"
     static let wandAndStars = "wand.and.stars"
 
-    // MARK: - Decorative (KaomojiMascot)
+    // MARK: - Decorative symbols
     static let heartFill = "heart.fill"
     static let cloudFill = "cloud.fill"
     static let sparkle = "sparkle"

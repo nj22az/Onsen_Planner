@@ -1,6 +1,11 @@
 # Onsen Planner (Vecka)
 
-iOS 18+ week-number app with semantic color coding. Built with SwiftUI, SwiftData, and WidgetKit.
+iOS 18+ ISO week-number utility with native Apple UI and Home/Lock Screen widgets.
+Week display and date lookup work offline without permissions or database access.
+Existing planner data remains available from Settings → Saved planner.
+
+The widget-first overhaul is described in [`docs/WIDGET_FIRST_V1.md`](docs/WIDGET_FIRST_V1.md), including the three optional palettes, version-one scope and pending native acceptance.
+The active design specification is [`DESIGN.md`](DESIGN.md); Joho documentation below describes the retained planner surfaces.
 
 ## Build
 
@@ -49,4 +54,4 @@ VeckaUITests/          UI tests
 
 ## House rules
 
-The Joho Design System enforces a strict visual language. Don't hardcode SF Symbol strings or raw colors — see the [design-system manual](docs/JDS-MAN-SFW-001_joho-design-system.md) for the full ruleset.
+The retained planner uses the Joho Design System. Native week surfaces follow `DESIGN.md`. Don't hardcode SF Symbol strings or raw colors — see the [design-system manual](docs/JDS-MAN-SFW-001_joho-design-system.md) for the full ruleset.

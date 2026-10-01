@@ -12,6 +12,9 @@
       <TestableReference skipped="NO" parallelizable="NO">
         <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="B4310AEB2E476B6C00C32DDD" BuildableName="VeckaTests.xctest" BlueprintName="VeckaTests" ReferencedContainer="container:Vecka.xcodeproj"/>
       </TestableReference>
+      <TestableReference skipped="NO" parallelizable="NO">
+        <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="B4310AF52E476B6C00C32DDD" BuildableName="VeckaUITests.xctest" BlueprintName="VeckaUITests" ReferencedContainer="container:Vecka.xcodeproj"/>
+      </TestableReference>
     </Testables>
   </TestAction>
   <LaunchAction buildConfiguration="Debug" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.IDEFoundation.Launcher.LLDB" launchStyle="0" useCustomWorkingDirectory="NO" ignoresPersistentStateOnLaunch="NO" debugDocumentVersioning="YES" debugServiceExtension="internal" allowLocationSimulation="YES">

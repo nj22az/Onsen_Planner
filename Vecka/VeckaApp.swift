@@ -14,76 +14,17 @@ struct VeckaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var navigationManager = NavigationManager()
     @State private var storeManager = StoreManager.shared
-    @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    @State private var showOnboarding = false
-
-    private var appearancePreference: AppearancePreference {
-        AppearancePreference(rawValue: appearancePreferenceRaw) ?? .system
-    }
-
     @State private var persistence = AppPersistence()
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if AppEnvironment.isUITesting || AppEnvironment.isUnitTesting {
-                    UITestRootView()
-                        .environment(storeManager)
-                } else if let sharedModelContainer = persistence.container {
-                    AppearanceResolver(preference: appearancePreference) { resolvedMode in
-                        ContentView()
-                            .environment(navigationManager)
-                            .environment(storeManager)
-                            // 情報デザイン: Apply the resolved app color mode (binary).
-                            .johoColorMode(resolvedMode)
-                            // iOS chrome follows the user's preference. The nav-bar
-                            // bg is set to `colors.surface` in JohoNavigationModifier,
-                            // matching the canvas, so status-bar icons stay visible
-                            // in both modes regardless of which page is on top.
-                            .preferredColorScheme(appearancePreference.preferredColorScheme)
-                    }
-                        .onOpenURL { url in
-                            handleWidgetURL(url)
-                        }
-                        .task {
-                            // Entitlement checks must not wait for product/pricing servers.
-                            // New sales remain disabled until release validation is complete.
-                            await storeManager.refreshEntitlements()
-                            if ReleaseFeatures.proSalesEnabled { await storeManager.loadProducts() }
-                        }
-                        .onChange(of: scenePhase) { _, phase in
-                            if phase == .active { Task { await storeManager.refreshEntitlements() } }
-                        }
-                        .onAppear {
-                            Log.i("App launched. System language: \(LanguageManager.shared.currentLanguageCode)")
-                            // Show onboarding on first launch
-                            if !hasCompletedOnboarding {
-                                showOnboarding = true
-                            }
-                            // Seed quirky facts from JSON on first launch
-                            QuirkyFactsLoader.seedIfNeeded(context: sharedModelContainer.mainContext)
-                            // Seed calendar facts from JSON on first launch
-                            CalendarFactsLoader.seedIfNeeded(context: sharedModelContainer.mainContext)
-                        }
-                        .fullScreenCover(isPresented: $showOnboarding) {
-                            OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-                        }
-                        .modelContainer(sharedModelContainer)
-                } else {
-                    StorageRecoveryView(persistence: persistence)
-                }
-            }
-            .task {
-                if !AppEnvironment.isUITesting && !AppEnvironment.isUnitTesting {
-                    persistence.open()
-                }
-            }
+            WeekRootView(persistence: persistence)
+                .environment(navigationManager)
+                .environment(storeManager)
+                .onOpenURL { handleWidgetURL($0) }
         }
     }
-    
-    
+
     // MARK: - Widget URL Handling
     private func handleWidgetURL(_ url: URL) {
         guard url.scheme == "vecka" else { return }
@@ -150,6 +91,7 @@ class NavigationManager {
     }
 
     func navigateToToday() {
+        factIdToShow = nil
         targetDate = Date()
         targetPage = .landing  // 情報デザイン: Today goes to landing
         shouldNavigateToPage = true
@@ -157,11 +99,11 @@ class NavigationManager {
     }
 
     func navigateToWeek(_ weekNumber: Int) {
-        let calendar = Calendar.iso8601
-        let year = calendar.component(.year, from: Date())
+        factIdToShow = nil
+        let year = ISOWeekCalendar.week(for: Date()).year
 
         // Find the date for the given week number
-        if let weekDate = calendar.date(from: DateComponents(weekOfYear: weekNumber, yearForWeekOfYear: year)) {
+        if let weekDate = ISOWeekCalendar.date(week: weekNumber, year: year) {
             targetDate = weekDate
             targetPage = .landing  // 情報デザイン: Widget taps go to landing
             shouldNavigateToPage = true
@@ -170,10 +112,10 @@ class NavigationManager {
     }
 
     func navigateToWeek(_ weekNumber: Int, year: Int) {
-        let calendar = Calendar.iso8601
+        factIdToShow = nil
 
         // Find the date for the given week number and year
-        if let weekDate = calendar.date(from: DateComponents(weekOfYear: weekNumber, yearForWeekOfYear: year)) {
+        if let weekDate = ISOWeekCalendar.date(week: weekNumber, year: year) {
             targetDate = weekDate
             targetPage = .landing  // 情報デザイン: Widget taps go to landing
             shouldNavigateToPage = true
@@ -237,7 +179,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        configureGlassAppearance()
         return true
     }
     
@@ -245,26 +186,4 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return Self.orientationLock
     }
     
-    /// Configures UIKit appearance with opaque backgrounds (情報デザイン: no glass/blur)
-    ///
-    /// iOS 27 note (Liquid Glass era): default system chrome is glass, but an
-    /// explicitly provided appearance like this one still wins — 情報デザイン
-    /// deliberately ships opaque, bordered chrome, and this proxy is how the
-    /// UIKit-rendered bars (rare in this SwiftUI app) stay on-brand. The
-    /// system-wide transparency slider does not override explicit
-    /// appearances, so behavior is stable across iOS 26/27 settings.
-    private func configureGlassAppearance() {
-        // Tab Bar: Opaque background (情報デザイン forbids blur/glass)
-        let tabBarAppearance = UITabBarAppearance()
-        tabBarAppearance.configureWithOpaqueBackground()
-        UITabBar.appearance().standardAppearance = tabBarAppearance
-        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-
-        // Navigation Bar: Opaque background (情報デザイン forbids blur/glass)
-        let navBarAppearance = UINavigationBarAppearance()
-        navBarAppearance.configureWithOpaqueBackground()
-        UINavigationBar.appearance().standardAppearance = navBarAppearance
-        UINavigationBar.appearance().scrollEdgeAppearance = navBarAppearance
-        UINavigationBar.appearance().compactAppearance = navBarAppearance
-    }
 }

@@ -7,7 +7,6 @@
 //  Design principles:
 //  - Follows Star Page golden standard layout
 //  - Bento compartmentalization with wall dividers
-//  - Mascot as small sprite companion (not hero)
 //  - Max 8pt top padding (dark BG barely visible)
 //  - Black text on white backgrounds ALWAYS
 //
@@ -202,7 +201,7 @@ struct LandingPageView: View {
         let weekday = today.formatted(.dateTime.weekday(.abbreviated)).uppercased()
 
         return VStack(spacing: 0) {
-            // ROW 1: Icon + Title | WALL | Mascot
+            // ROW 1: Icon and title
             HStack(spacing: 0) {
                 // LEFT COMPARTMENT: Icon + Title
                 HStack(spacing: JohoDimensions.spacingSM) {
@@ -222,22 +221,6 @@ struct LandingPageView: View {
                 .padding(.vertical, JohoDimensions.spacingSM)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // VERTICAL WALL
-                Rectangle()
-                    .fill(colors.border)
-                    .frame(width: 1.5)
-
-                // RIGHT COMPARTMENT: Subtle mascot (情報デザイン)
-                // Light animations: blinking, eye movement - no distracting transforms
-                JohoMascot(
-                    mood: mascotMood,
-                    size: 44,
-                    borderWidth: 1.5,
-                    showBob: true,      // Gentle bobbing
-                    showBlink: true,    // Eye blinks
-                    autoOnsen: false    // No ♨️ transformation
-                )
-                .padding(JohoDimensions.spacingSM)
             }
             .frame(minHeight: 56)
 
@@ -283,11 +266,6 @@ struct LandingPageView: View {
         }
         .background(colors.surface)
         .johoBordered(cornerRadius: JohoDimensions.radiusLarge, borderWidth: JohoDimensions.borderThick)
-    }
-
-    /// Mascot mood - happy default, with occasional ♨️ onsen transformation
-    private var mascotMood: MascotMood {
-        .happy  // Default happy, blushing face - autoOnsen handles ♨️ transformation
     }
 
     // MARK: - World Clocks Card (Hotel Style)
