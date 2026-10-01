@@ -1,0 +1,6 @@
+"mac.menu_bar" = "Show week in menu bar";
+"mac.widget_instructions" = "Control-click the desktop and choose Edit Widgets, or open Notification Centre and choose Edit Widgets. Search for Onsen Planner or Week Number. Add a standard widget, or edit a Widget Studio widget if you own the add-on.";
+"mac.planner_scope" = "This Mac version provides the week utility and widgets. The older saved planner remains in the iPhone/iPad app. It is not migrated or synced by this Mac app.";
+"mac.widget_preview" = "Illustrations of the available layouts. macOS controls the appearance, sizing and refresh timing of installed widgets.";
+"mac.open_app" = "Open Onsen Planner";
+"mac.quit" = "Quit Onsen Planner";
